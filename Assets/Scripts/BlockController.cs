@@ -18,8 +18,10 @@ public class BlockController : MonoBehaviour {
 
     public void DigAt(int row, int col) {
         if (ValidIndex(row, col)) {
-            GameObject block = state.blocks[row, col];
-            if (block != null) {
+            HashSet<GameObject> blocks = new HashSet<GameObject>();
+            SetSameColorBlocks(blocks, row, col);
+            
+            foreach (GameObject block in blocks) {
                 Destroy(block);
                 state.blocks[row, col] = null;
             }
@@ -176,7 +178,7 @@ public class BlockController : MonoBehaviour {
 
                 GameObject nextBlock = BlockAt(row + rowOffset, col + colOffset);
                 if (nextBlock != null && nextBlock.name == block.name) {
-                    result.Add(nextBlock);
+                    SetSameColorBlocks(result, row + rowOffset, col + colOffset);
                 }
             }
         }
