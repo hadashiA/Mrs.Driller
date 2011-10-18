@@ -69,6 +69,28 @@ public class BlockController : MonoBehaviour {
     }
     
     void Update() {
+        // Brocks drop
+        for (int row = state.numBlockRows - 2; row >= 0; row--) {
+            for (int col = 0; col < state.numBlockCols; col++) {
+                GameObject block = BlockAt(row, col);
+                if (block == null) continue;
+
+                GameObject down  = BlockAt(row + 1, col);
+                if (down == null) {
+                    GameObject left  = BlockAt(row, col - 1);
+                    if (left != null && left.name == block.name)
+                        continue;
+
+                    GameObject right = BlockAt(row, col + 1);
+                    if (right != null && right.name == block.name)
+                        continue;
+
+                    state.blocks[row, col] = null;
+                    state.blocks[row + 1, col] = block;
+                }
+            }
+        }
+
         // Player drop translate
         Vector2 playerSrc = player.transform.position;
         float playerSrcY  = playerSrc.y;
