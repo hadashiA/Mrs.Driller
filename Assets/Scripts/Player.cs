@@ -85,13 +85,15 @@ public class Player : MonoBehaviour {
         if (this.idle) {
             switch (direction) {
                 case Direction.Left:
-                    if (state.playerCol > 0) {
+                    if (state.playerCol > 0 &&
+                        state.blocks[state.playerRow, state.playerCol - 1] == null) {
                         state.playerCol--;
                         this.idle = false;
                     }
                     break;
                 case Direction.Right:
-                    if (state.playerCol < state.numBlockCols - 1) {
+                    if (state.playerCol < state.numBlockCols - 1 &&
+                        state.blocks[state.playerRow, state.playerCol + 1] == null) {
                         state.playerCol++;
                         this.idle = false;
                     }
