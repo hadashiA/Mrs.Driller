@@ -11,7 +11,6 @@ public class Player : MonoBehaviour {
     public bool idle  = true;
 
     Direction direction;
-
     float nextDigTime = 0;
 
     StageState state;
@@ -41,13 +40,20 @@ public class Player : MonoBehaviour {
         if (Input.GetKey(KeyCode.LeftArrow)) {
             this.direction = Direction.Left;
             WalkTo(Direction.Left);
+            blockController.Point(state.playerRow, state.playerCol - 1);
+
         } else if (Input.GetKey(KeyCode.RightArrow)) {
             this.direction = Direction.Right;
             WalkTo(Direction.Right);
+            blockController.Point(state.playerRow, state.playerCol + 1);
+
         } else if (Input.GetKey(KeyCode.UpArrow)) {
             this.direction = Direction.Up;
+            blockController.Point(state.playerRow - 1, state.playerCol);
+
         } else if (Input.GetKey(KeyCode.DownArrow)) {
             this.direction = Direction.Down;
+            blockController.Point(state.playerRow + 1, state.playerCol);
         }
     }
 

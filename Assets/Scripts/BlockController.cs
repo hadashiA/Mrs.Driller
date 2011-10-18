@@ -17,17 +17,27 @@ public class BlockController : MonoBehaviour {
     IEnumerator<float> playerWalk;
 
     public void DigAt(int row, int col) {
-        if (row < 0 || row >= state.numBlockRows ||
-            col < 0 || col >= state.numBlockCols) {
-            return;
+        if (ValidIndex(row, col)) {
+            GameObject block = state.blocks[row, col];
+            if (block != null) {
+                Destroy(block);
+                state.blocks[row, col] = null;
+            }
         }
+    }
 
-        GameObject block = state.blocks[row, col];
-        if (block != null) {
-            Destroy(block);
-            state.blocks[row, col] = null;
+    // Debug
+    public void Point(int row, int col) {
+        HashSet<GameObject> blocks = new HashSet<GameObject>();
+        SetSameColorBlocks(blocks, row, col);
+
+        if (blocks != null) {
+            foreach (GameObject block in blocks) {
+                Debug.DrawLine(
+                    block.transform.position, this.playerPos, Color.green
+                );
+            }
         }
-            
     }
 
     // Use this for initialization
@@ -45,6 +55,7 @@ public class BlockController : MonoBehaviour {
                 
                 int materialIndex = Random.Range(0, state.blockMaterials.Length);
                 block.renderer.material = state.blockMaterials[materialIndex];
+                block.name = block.renderer.material.name;
                 state.blocks[row, col] = block;
             }
         }
@@ -117,6 +128,19 @@ public class BlockController : MonoBehaviour {
         }
     }
 
+    bool ValidIndex(int row, int col) {
+        return (row > 0 && row < state.numBlockRows &&
+                col > 0 && col < state.numBlockCols);
+    }
+
+    GameObject BlockAt(int row, int col) {
+        if (ValidIndex(row, col)) {
+            return state.blocks[row, col];
+        } else {
+            return null;
+        }
+    }
+
     Vector2 PositionAt(int row, int col) {
         float x = col * state.blockSize;
         float y = -(row * state.blockSize);
@@ -136,6 +160,25 @@ public class BlockController : MonoBehaviour {
         while (distance > movedTotal) {
             movedTotal += speedPerFrame;
             yield return speedPerFrame;
+        }
+    }
+
+    void SetSameColorBlocks(HashSet<GameObject> result, int row, int col) {
+        GameObject block = BlockAt(row, col);
+        
+        if (block == null || !result.Add(block)) return;
+
+        // 上下左右
+        for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
+            for (int colOffset = -1; colOffset <= 1; colOffset++) {
+                if ((rowOffset != 0 && colOffset != 0) ||
+                    (rowOffset == 0 && colOffset == 0)) continue;
+
+                GameObject nextBlock = BlockAt(row + rowOffset, col + colOffset);
+                if (nextBlock != null && nextBlock.name == block.name) {
+                    result.Add(nextBlock);
+                }
+            }
         }
     }
 }
