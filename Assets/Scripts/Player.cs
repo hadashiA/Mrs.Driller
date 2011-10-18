@@ -15,12 +15,14 @@ public class Player : MonoBehaviour {
     float nextDigTime = 0;
 
     StageState state;
+    BlockController blockController;
 
     // Use this for initialization
     void Start() {
         GameObject game = GameObject.Find("Game");
-
         this.state = game.GetComponent<StageState>();
+        this.blockController = game.GetComponent<BlockController>();
+
         this.direction = Direction.Down;
 
         Drop();
@@ -29,26 +31,23 @@ public class Player : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         Drop();
-
+        
         // Dig
         if (Input.GetButton("Fire1") && Time.time > nextDigTime) {
             nextDigTime = Time.time + state.digTimeRate;
             Dig();
         }
-
-        // Walk
-        if (this.idle) {
-            if (Input.GetKey(KeyCode.LeftArrow)) {
-                this.direction = Direction.Left;
-                WalkTo(Direction.Left);
-            } else if (Input.GetKey(KeyCode.RightArrow)) {
-                this.direction = Direction.Right;
-                WalkTo(Direction.Right);
-            } else if (Input.GetKey(KeyCode.UpArrow)) {
-                this.direction = Direction.Up;
-            } else if (Input.GetKey(KeyCode.DownArrow)) {
-                this.direction = Direction.Down;
-            }
+        
+        if (Input.GetKey(KeyCode.LeftArrow)) {
+            this.direction = Direction.Left;
+            WalkTo(Direction.Left);
+        } else if (Input.GetKey(KeyCode.RightArrow)) {
+            this.direction = Direction.Right;
+            WalkTo(Direction.Right);
+        } else if (Input.GetKey(KeyCode.UpArrow)) {
+            this.direction = Direction.Up;
+        } else if (Input.GetKey(KeyCode.DownArrow)) {
+            this.direction = Direction.Down;
         }
     }
 
@@ -64,6 +63,22 @@ public class Player : MonoBehaviour {
     }
 
     void Dig() {
+        if (this.idle) {
+            switch (this.direction) {
+                case Direction.Down:
+                    blockController.DigAt(state.playerRow + 1, state.playerCol);
+                    break;
+                case Direction.Up:
+                    blockController.DigAt(state.playerRow - 1, state.playerCol);
+                    break;
+                case Direction.Left:
+                    blockController.DigAt(state.playerRow, state.playerCol - 1);
+                    break;
+                case Direction.Right:
+                    blockController.DigAt(state.playerRow, state.playerCol + 1);
+                    break;
+            }
+        }
     }
 
     void WalkTo(Direction direction) {

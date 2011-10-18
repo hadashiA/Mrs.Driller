@@ -15,9 +15,19 @@ public class BlockController : MonoBehaviour {
 
     IEnumerator<float> playerDrop;
     IEnumerator<float> playerWalk;
-    IEnumerator<float> blockDrop;
 
     public void DigAt(int row, int col) {
+        if (row < 0 || row >= state.numBlockRows ||
+            col < 0 || col >= state.numBlockCols) {
+            return;
+        }
+
+        GameObject block = state.blocks[row, col];
+        if (block != null) {
+            Destroy(block);
+            state.blocks[row, col] = null;
+        }
+            
     }
 
     // Use this for initialization
@@ -46,8 +56,6 @@ public class BlockController : MonoBehaviour {
     }
     
     void Update() {
-        float gravityPerFrame = state.gravity * Time.deltaTime;
-
         // Player drop translate
         Vector2 playerSrc = player.transform.position;
         float playerSrcY  = playerSrc.y;
@@ -85,27 +93,28 @@ public class BlockController : MonoBehaviour {
         }
 
         // Blocks scroll translate
-        // for (int row = 0; row < state.numBlockRows; row++) {
-        //     for (int col = 0; col < state.numBlockCols; col++) {
-        //         GameObject block = state.blocks[row, col];
-        //         if (block == null) continue;
+        float gravityPerFrame = state.gravity * Time.deltaTime;
+        for (int row = 0; row < state.numBlockRows; row++) {
+            for (int col = 0; col < state.numBlockCols; col++) {
+                GameObject block = state.blocks[row, col];
+                if (block == null) continue;
 
-        //         float blockY = block.transform.position.y;
-        //         moveToY = PositionAt(row, col).y;
+                float blockSrcY  = block.transform.position.y;
+                float blockDestY = PositionAt(row, col).y;
 
-        //         if (moveToY > blockY) {
-        //             if (blockY + gravityPerFrame > moveToY * 0.9f) {
-        //                 block.transform.position = new Vector2(
-        //                     block.transform.position.x, moveToY
-        //                 );
-        //                 playerBehaiviour.idle = true;
+                if (blockSrcY < blockDestY) {
+                    if (blockSrcY + gravityPerFrame > blockDestY) {
+                        block.transform.position = new Vector2(
+                            block.transform.position.x, blockDestY
+                        );
+                        playerBehaiviour.idle = true;
                             
-        //             } else {
-        //                 block.transform.Translate(new Vector2(0, gravityPerFrame));
-        //             }
-        //         }
-        //     }
-        // }
+                    } else {
+                        block.transform.Translate(new Vector2(0, gravityPerFrame));
+                    }
+                }
+            }
+        }
     }
 
     Vector2 PositionAt(int row, int col) {
