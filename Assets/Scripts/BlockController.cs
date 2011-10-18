@@ -123,7 +123,7 @@ public class BlockController : MonoBehaviour {
 
         int cameraDiff = state.playerRow - state.cameraFixedRow;
         if (cameraDiff > 0) {
-            y += (state.playerRow - cameraDiff) * state.blockSize;
+            y += cameraDiff * state.blockSize;
         }
         return state.screenTop + new Vector2(x, y);
     }
