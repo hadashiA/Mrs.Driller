@@ -21,4 +21,7 @@ public class StageState : MonoBehaviour {
     public int playerCol = 7;
 
     public GameObject[,] blocks;
+
+    public float walkSpeed = 3.0f;
+    public float digTimeRate = 0.5f;
 }

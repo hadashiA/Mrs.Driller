@@ -8,18 +8,11 @@ enum Direction {
 };
 
 public class Player : MonoBehaviour {
-    public float walkSpeed = 3.0f;
-
-    public float digTimeRate = 0.5f;
+    public bool idle  = true;
 
     Direction direction;
 
     float nextDigTime = 0;
-
-    bool _idle  = true;
-    public bool idle {
-        set { this._idle = value; }
-    }
 
     StageState state;
 
@@ -39,12 +32,12 @@ public class Player : MonoBehaviour {
 
         // Dig
         if (Input.GetButton("Fire1") && Time.time > nextDigTime) {
-            nextDigTime = Time.time + digTimeRate;
+            nextDigTime = Time.time + state.digTimeRate;
             Dig();
         }
 
         // Walk
-        if (this._idle) {
+        if (this.idle) {
             if (Input.GetKey(KeyCode.LeftArrow)) {
                 this.direction = Direction.Left;
                 WalkTo(Direction.Left);
@@ -60,12 +53,12 @@ public class Player : MonoBehaviour {
     }
 
     void Drop() {
-        if (this._idle) {
+        if (this.idle) {
             int downRow = state.playerRow + 1;
             if (downRow < state.numBlockRows &&
                 state.blocks[downRow, state.playerCol] == null) {
                 state.playerRow = downRow;
-                this._idle = false;
+                this.idle = false;
             }
         }
     }
@@ -74,18 +67,18 @@ public class Player : MonoBehaviour {
     }
 
     void WalkTo(Direction direction) {
-        if (this._idle) {
+        if (this.idle) {
             switch (direction) {
                 case Direction.Left:
                     if (state.playerCol > 0) {
                         state.playerCol--;
-                        this._idle = false;
+                        this.idle = false;
                     }
                     break;
                 case Direction.Right:
                     if (state.playerCol < state.numBlockCols - 1) {
                         state.playerCol++;
-                        this._idle = false;
+                        this.idle = false;
                     }
                     break;
             }
