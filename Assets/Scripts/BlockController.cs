@@ -100,7 +100,14 @@ public class BlockController : MonoBehaviour {
     }
 
     void Update() {
+        List<int> finishIndices = new List<int>();
+
+        int cnt = 0;
         foreach (Block dropBlock in this.dropBlocks) {
+            if (dropBlock.drop != null) {
+                dropBlock.drop.MoveNext();
+            }
+            cnt++;
         }
     }
     

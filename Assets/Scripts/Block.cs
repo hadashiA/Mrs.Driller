@@ -24,8 +24,9 @@ public class Block : MonoBehaviour {
         get { return this.shake != null || this.drop != null; }
     }
 
+    public IEnumerator drop;
+
     IEnumerator shake;
-    IEnumerator drop;
 
     BlockController blockController;
 
@@ -48,8 +49,6 @@ public class Block : MonoBehaviour {
         if (this.shake != null && !this.shake.MoveNext()) {
             this.shake = null;
             this.drop = GetDropEnumerator();
-        } else if (this.drop != null && !this.drop.MoveNext()) {
-            this.drop = null;
         }
 
         transform.position = blockController.ScreenPos(this.pos);
@@ -78,21 +77,8 @@ public class Block : MonoBehaviour {
         float nextFoot = this.pos.y + 1;
         Block downBlock = blockController.BlockAtPos(this.pos.x, nextFoot);
 
-        while (downBlock == null) {
+        while (true) {
             float gravityPerFrame = blockController.gravity * Time.deltaTime;
-
-            nextFoot = this.pos.y + gravityPerFrame + 1;
-            downBlock = blockController.BlockAtPos(this.pos.x, nextFoot);
-
-            if (nextFoot % 1 > 0.5f) 
-                blockController.Fixed(this);
-            
-            if (downBlock != null) {
-                this.pos.y = downBlock.pos.y - 1;
-                blockController.Fixed(this);
-                yield break;
-            }
-
             this.pos.y += gravityPerFrame;
             yield return true;
         }
