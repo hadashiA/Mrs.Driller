@@ -47,6 +47,11 @@ public class BlockController : MonoBehaviour {
             if (this.blocks[row, col] != null) {
                 Destroy(block.gameObject);
                 this.blocks[row, col] = null;
+
+                if (row > 0) {
+                    Block upBlock = this.blocks[row - 1, col];
+                    if (upBlock != null) upBlock.Drop();
+                }
             }            
         }
     }
