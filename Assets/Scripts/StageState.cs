@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 public class StageState : MonoBehaviour {
-    public float gravity = 2.0f;
+    public float gravity = 5.0f;
     public int cameraFixedRow = 5;
     public Vector2 screenTop = Vector2.zero;
 

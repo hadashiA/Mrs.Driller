@@ -60,35 +60,28 @@ public class Player : MonoBehaviour {
     }
 
     void Dig() {
-        switch (this.direction) {
-            case Direction.Down:
-                this.drop = Drop();
-                break;
-            case Direction.Up:
-                break;
-            case Direction.Left:
-                break;
-            case Direction.Right:
-                break;
+        GameObject block = NextBlock(this.direction);
+        blockController.Remove(block);
+        if (this.direction == Direction.Down) {
+            this.drop = Drop();
         }
     }
-
 
     GameObject NextBlock(Direction d) {
         Vector2 pos = transform.position;
 
         switch (d) {
             case Direction.Left:
-                pos.x -= state.blockSize * 0.5f;
+                pos.x -= state.blockSize;
                 break;
             case Direction.Right:
-                pos.x += state.blockSize * 0.5f;
+                pos.x += state.blockSize;
                 break;
             case Direction.Up:
-                pos.y -= state.blockSize * 0.5f;
+                pos.y += state.blockSize;
                 break;
             case Direction.Down:
-                pos.y += state.blockSize * 0.5f;
+                pos.y -= state.blockSize;
                 break;
         }
 
@@ -127,7 +120,7 @@ public class Player : MonoBehaviour {
             float nextY = transform.position.y - gravityPerFrame;
 
             downBlock = blockController.BlockAtPos(
-                new Vector2(transform.position.x, nextY - (state.blockSize * 0.5f))
+                new Vector2(transform.position.x, nextY)
             );
 
             if (downBlock != null) {

@@ -9,6 +9,8 @@ public class BlockController : MonoBehaviour {
 
     GameObject player;
 
+    GameObject blockGroupPrefab;
+
     public GameObject BlockAtPos(Vector2 pos) {
         int col = Mathf.FloorToInt(pos.x * state.blockSize);
         int row = -Mathf.FloorToInt((pos.y + scrolledY) * state.blockSize);
@@ -21,38 +23,20 @@ public class BlockController : MonoBehaviour {
         }
     }
 
-    // public void DigAt(int row, int col) {
-    //     if (ValidIndex(row, col)) {
-    //         HashSet<GameObject> blocks = new HashSet<GameObject>();
-    //         SetSameColorBlocks(blocks, row, col);
-            
-    //         foreach (GameObject block in blocks) {
-    //             Destroy(block);
-    //             state.blocks[row, col] = null;
-    //         }
+    public GameObject BlockAtPos(float x, float y) {
+        return BlockAtPos(new Vector2(x, y));
+    }
 
-    //         for (int row = state.numBlockRows - 2; row >= 0; row--) {
-    //             for (int col = 0; col < state.numBlockCols; col++) {
-    //                 GameObject block = BlockAt(row, col);
-    //                 if (block == null) continue;
-                    
-    //                 GameObject down  = BlockAt(row + 1, col);
-    //                 if (down == null) {
-    //                     GameObject left  = BlockAt(row, col - 1);
-    //                     if (left != null && left.name == block.name)
-    //                         continue;
-                        
-    //                     GameObject right = BlockAt(row, col + 1);
-    //                     if (right != null && right.name == block.name)
-    //                         continue;
-                        
-    //                     state.blocks[row, col] = null;
-    //                     state.blocks[row + 1, col] = block;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+    public void Remove(GameObject block) {
+        if (block == null) return;
+        
+        Vector2 pos = block.transform.position;
+        int col = Mathf.FloorToInt(pos.x * state.blockSize);
+        int row = -Mathf.FloorToInt((pos.y + scrolledY) * state.blockSize);
+
+        Destroy(block);
+        state.blocks[row, col] = null;
+    }
 
     // Use this for initialization
     void Start() {
@@ -91,22 +75,26 @@ public class BlockController : MonoBehaviour {
         );
     }
 
-    // void SetSameColorBlocks(GameObject parent, int row, int col) {
-    //     GameObject block = BlockAt(row, col);
+    void Grouping(GameObject parent, GameObject block) {
+        if (block.transform.parent == parent.transform) return;
         
-    //     if (block == null || !result.Add(block)) return;
+        block.transform.parent = parent.transform;
+        Vector2 pos = block.transform.position;
 
-    //     // 上下左右
-    //     for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
-    //         for (int colOffset = -1; colOffset <= 1; colOffset++) {
-    //             if ((rowOffset != 0 && colOffset != 0) ||
-    //                 (rowOffset == 0 && colOffset == 0)) continue;
+        // 上下左右
+        for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
+            for (int colOffset = -1; colOffset <= 1; colOffset++) {
+                if ((rowOffset != 0 && colOffset != 0) ||
+                    (rowOffset == 0 && colOffset == 0)) continue;
 
-    //             GameObject nextBlock = BlockAt(row + rowOffset, col + colOffset);
-    //             if (nextBlock != null && nextBlock.name == block.name) {
-    //                 SetSameColorBlocks(result, row + rowOffset, col + colOffset);
-    //             }
-    //         }
-    //     }
-    // }
+                GameObject nextBlock = BlockAtPos(
+                    pos.x + colOffset * state.blockSize,
+                    pos.y + colOffset * state.blockSize
+                );
+                
+                if (nextBlock != null && nextBlock.name == block.name) 
+                    Grouping(parent, nextBlock);
+            }
+        }
+    }
 }
