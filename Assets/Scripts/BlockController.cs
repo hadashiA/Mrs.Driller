@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class BlockController : MonoBehaviour {
     StageState state;
 
-    float scrolledY;
+    float scrolledY = 0;
 
     GameObject player;
 
@@ -32,7 +32,7 @@ public class BlockController : MonoBehaviour {
         
         Vector2 pos = block.transform.position;
         int col = Mathf.FloorToInt(pos.x * state.blockSize);
-        int row = -Mathf.FloorToInt((pos.y + scrolledY) * state.blockSize);
+        int row = -Mathf.FloorToInt((pos.y - scrolledY) * state.blockSize);
 
         Destroy(block);
         state.blocks[row, col] = null;
@@ -72,16 +72,18 @@ public class BlockController : MonoBehaviour {
     
     void Update() {
         // Scroll blocks
-        if (player.transform.position.y < state.cameraFixedY) {
-            float cameraDiff = state.cameraFixedY - player.transform.position.y;
+        Vector2 playerPos = player.transform.position;
+        if (playerPos.y < state.cameraFixedY) {
+            float cameraDiff = state.cameraFixedY - playerPos.y;
             
-            // Debug.Log("playerY" + player.transform.position.y + " fixed:" + state.cameraFixedY + " cameraDiff:" + cameraDiff);
-
-            // float scroll = this.scrolledY + cameraDiff;
-            // float nextFixed = Mathf.Ceil(scroll / state.blockSize);
+            // Debug.Log("playerY:" + player.transform.position.y +
+            //           " fixedY:" + state.cameraFixedY + 
+            //           " cameraDiff" + cameraDiff);
             
-            // if (nextFixed - scroll < 0.1f) {
-            //     cameraDiff = 
+            float nextScrolledY = this.scrolledY + cameraDiff;
+            // if (nextScrolledY % state.blockSize > 0.9f) {
+            //     nextScrolledY = Mathf.Floor(this.scrolledY) + state.blockSize;
+            //     cameraDiff = nextScrolledY - this.scrolledY;
             // }
 
             player.transform.Translate(0, cameraDiff, 0);
@@ -90,7 +92,7 @@ public class BlockController : MonoBehaviour {
                 block.transform.Translate(0, cameraDiff, 0);
             } 
 
-            this.scrolledY += cameraDiff;
+            this.scrolledY = nextScrolledY;
         }
     }
 
