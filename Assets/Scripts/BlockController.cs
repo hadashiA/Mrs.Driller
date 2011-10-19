@@ -20,9 +20,7 @@ public class BlockController : MonoBehaviour {
     List<Block> dropBlocks;
 
     public Vector2 ScreenPos(Vector2 pos) {
-        return new Vector2(
-            pos.x, -(pos.y)
-        );
+        return new Vector2(pos.x, -pos.y);
     }
 
     public Block BlockAtPos(Vector2 pos) {
@@ -52,8 +50,7 @@ public class BlockController : MonoBehaviour {
                 if (row > 0) {
                     Block upBlock = this.blocks[row - 1, col];
                     if (upBlock != null) {
-                        FindDropBlocks(upBlock);
-                        Debug.Log(this.dropBlocks.Count);
+                        SetDropBlocks(upBlock);
                     }
                 }
             }            
@@ -103,17 +100,23 @@ public class BlockController : MonoBehaviour {
     }
 
     void Update() {
+        foreach (Block dropBlock in this.dropBlocks) {
+            dropBlock.DropNext();
+        }
     }
     
-    void FindDropBlocks(Block block) {
-        this.dropBlocks.Add(block);
+    void SetDropBlocks(Block block) {
+        if (block.unfixed) return;
+
+        this.dropBlocks.Insert(0, block);
+        block.DropStart();
 
         int col = Mathf.FloorToInt(block.pos.x);
         int row = Mathf.FloorToInt(block.pos.y);
 
         if (row > 0) {
             Block upBlock = this.blocks[row - 1, col];
-            if (upBlock != null) FindDropBlocks(upBlock);
+            if (upBlock != null) SetDropBlocks(upBlock);
         }
     }
 

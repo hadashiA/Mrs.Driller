@@ -28,7 +28,7 @@ public class Player : MonoBehaviour {
         this.blockController = game.GetComponent<BlockController>();
 
         this.direction = Direction.Down;
-        this.drop = DropStart();
+        this.drop = GetDropEnumerator();
     }
     
     // Update is called once per frame
@@ -47,10 +47,10 @@ public class Player : MonoBehaviour {
         // Walk
         if (this.walk == null) {
             if (Input.GetKey(KeyCode.LeftArrow)) {
-                this.walk = WalkStart(Direction.Left);
+                this.walk = GetWalkEnumerator(Direction.Left);
                 
             } else if (Input.GetKey(KeyCode.RightArrow)) {
-                this.walk = WalkStart(Direction.Right);
+                this.walk = GetWalkEnumerator(Direction.Right);
                 
             } else if (Input.GetKey(KeyCode.UpArrow)) {
                 this.direction = Direction.Up;
@@ -82,7 +82,7 @@ public class Player : MonoBehaviour {
         Block block = NextBlock(this.direction);
         blockController.Remove(block);
         if (this.direction == Direction.Down) {
-            this.drop = DropStart();
+            this.drop = GetDropEnumerator();
         }
     }
 
@@ -108,7 +108,7 @@ public class Player : MonoBehaviour {
         return blockController.BlockAtPos(x, y);
     }
 
-    IEnumerator WalkStart(Direction d) {
+    IEnumerator GetWalkEnumerator(Direction d) {
         this.direction = d;
 
         if ((d == Direction.Left && NextBlock(Direction.Left) != null) ||
@@ -130,7 +130,7 @@ public class Player : MonoBehaviour {
         this.pos.x = walkFrom + sign;
     }
 
-    IEnumerator DropStart() {
+    IEnumerator GetDropEnumerator() {
         Block downBlock = NextBlock(Direction.Down);
 
         while (downBlock == null) {

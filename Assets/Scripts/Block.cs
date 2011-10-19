@@ -20,38 +20,51 @@ public class Block : MonoBehaviour {
 
     public float shakeTime = 0.5f;
 
-    BlockController blockController;
+    public bool unfixed {
+        get { return this.shake != null || this.drop != null; }
+    }
 
     IEnumerator shake;
     IEnumerator drop;
+
+    BlockController blockController;
 
     public override string ToString() {
         return "color:" + this.color + " pos:" + pos;
     }
 
-    public void Drop() {
-        this.shake = ShakeStart();
+    public void DropStart() {
+        this.shake = GetShakeEnumerator();
     }
 
-    // Use this for initialization
-    void Start() {
-        GameObject game = GameObject.Find("Game");
-        this.blockController = game.GetComponent<BlockController>();
-    }
-    
-    // Update is called once per frame
-    void Update() {
-        if (this.shake != null && !this.shake.MoveNext()) {
+    public void DropNext() {
+        if (this.shake != null && this.shake.MoveNext()) {
             this.shake = null;
-            this.drop = DropStart();
-        } else if (this.drop != null && !this.drop.MoveNext()) {
+            this.drop = GetDropEnumerator();
+        } else if (this.drop != null && this.drop.MoveNext()) {
             this.drop = null;
         }
+    }
+    
+    IEnumerator GetShakeEnumerator() {
+        float beforeShake = Time.time;
+        float beforeX = pos.x;
 
-        transform.position = blockController.ScreenPos(this.pos);
+        while (true) {
+            float total = Time.time - beforeShake;
+            float progress = total / this.shakeTime;
+ 
+            if (total > this.shakeTime) {
+                pos.x = beforeX;
+                yield break;
+            } else {
+                pos.x += 0.02f * (progress) * (progress > 0.5 ? -1 : 1);
+                yield return true;
+            }
+        }
     }
 
-    IEnumerator DropStart() {
+    IEnumerator GetDropEnumerator() {
         float nextFoot = this.pos.y + 1;
         Block downBlock = blockController.BlockAtPos(this.pos.x, nextFoot);
 
@@ -74,22 +87,15 @@ public class Block : MonoBehaviour {
             yield return true;
         }
     }
-
-    IEnumerator ShakeStart() {
-        float beforeShake = Time.time;
-        float beforeX = pos.x;
-
-        while (true) {
-            float total = Time.time - beforeShake;
-            float progress = total / this.shakeTime;
- 
-            if (total > this.shakeTime) {
-                pos.x = beforeX;
-                yield break;
-            } else {
-                pos.x += 0.02f * (progress) * (progress > 0.5 ? -1 : 1);
-                yield return true;
-            }
-        }
-     }
+    
+    // Use this for initialization
+    void Start() {
+        GameObject game = GameObject.Find("Game");
+        this.blockController = game.GetComponent<BlockController>();
+    }
+    
+    // Update is called once per frame
+    void Update() {
+        transform.position = blockController.ScreenPos(this.pos);
+    }
 }
