@@ -57,22 +57,6 @@ public class BlockController : MonoBehaviour {
         }
     }
 
-    public void Fixed(Block block) {
-        int col = Mathf.FloorToInt(block.pos.x);
-        int row = Mathf.FloorToInt(block.pos.y);
-
-        if (this.blocks[row, col] == null) {
-            this.blocks[row, col] = block;
-        }
-    }
-
-    public void UnFixed(Block block) {
-        int col = Mathf.FloorToInt(block.pos.x);
-        int row = Mathf.FloorToInt(block.pos.y);
-
-        this.blocks[row, col] = null;
-    }
-
     // Use this for initialization
     void Start() {
         this.blocks = new Block[this.numBlockRows, this.numBlockCols];
@@ -100,17 +84,38 @@ public class BlockController : MonoBehaviour {
     }
 
     void Update() {
-        List<int> finishIndices = new List<int>();
-
-        int cnt = 0;
         foreach (Block dropBlock in this.dropBlocks) {
-            if (dropBlock.drop != null) {
-                dropBlock.drop.MoveNext();
+            if (dropBlock.unfixed) {
+                UnFixed(dropBlock);
             }
-            cnt++;
+
+            Block downBlock = BlockAtPos(dropBlock.pos.x, dropBlock.pos.y + 1);
+            if (downBlock != null) {
+                dropBlock.pos.y = downBlock.pos.y - 1;
+                dropBlock.DropEnd();
+                Fixed(dropBlock);
+            }
         }
+
+        this.dropBlocks.RemoveAll(delegate(Block block) { return block.dropEnded; });
     }
     
+    void Fixed(Block block) {
+        int col = Mathf.FloorToInt(block.pos.x);
+        int row = Mathf.FloorToInt(block.pos.y);
+
+        if (this.blocks[row, col] == null) {
+            this.blocks[row, col] = block;
+        }
+    }
+
+    void UnFixed(Block block) {
+        int col = Mathf.FloorToInt(block.pos.x);
+        int row = Mathf.FloorToInt(block.pos.y);
+
+        this.blocks[row, col] = null;
+    }
+
     void SetDropBlocks(Block block) {
         if (block.dropStarted) return;
 

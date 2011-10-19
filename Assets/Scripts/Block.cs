@@ -3,13 +3,26 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class BlockGroup {
+    static int nextId = 0;
+
+    int id;
+
     HashSet<Block> blocks;
 
     public BlockGroup() {
+        this.id = nextId++;
     }
 
     public void Add(Block block) {
         blocks.Add(block);
+    }
+
+    public static bool operator==(BlockGroup a, BlockGroup b) {
+        return a.id == b.id;
+    }
+        
+    public static bool operator!=(BlockGroup a, BlockGroup b) {
+        return a.id != b.id;
     }
 }
 
@@ -20,12 +33,23 @@ public class Block : MonoBehaviour {
 
     public float shakeTime = 0.5f;
 
-    public bool dropStarted {
-        get { return this.shake != null || this.drop != null; }
+    public bool shaking {
+        get { return this.shake != null;  }
     }
 
-    public IEnumerator drop;
+    public bool unfixed {
+        get { return this.drop != null; }
+    }
 
+    public bool dropStarted {
+        get { return this.shaking || this.unfixed; }
+    }
+
+    public bool dropEnded {
+        get { return !this.dropStarted; }
+    }
+
+    IEnumerator drop;
     IEnumerator shake;
 
     BlockController blockController;
@@ -36,6 +60,10 @@ public class Block : MonoBehaviour {
 
     public void DropStart() {
         this.shake = GetShakeEnumerator();
+    }
+
+    public void DropEnd() {
+        this.drop = null;
     }
 
     // Use this for initialization
@@ -49,6 +77,8 @@ public class Block : MonoBehaviour {
         if (this.shake != null && !this.shake.MoveNext()) {
             this.shake = null;
             this.drop = GetDropEnumerator();
+        } else if (this.drop != null) {
+            this.drop.MoveNext();
         }
 
         transform.position = blockController.ScreenPos(this.pos);
@@ -64,7 +94,6 @@ public class Block : MonoBehaviour {
 
             if (total > this.shakeTime) {
                 pos.x = beforeX;
-                blockController.UnFixed(this);
                 yield break;
             } else {
                 pos.x += 0.02f * (progress) * (progress > 0.5 ? -1 : 1);
@@ -75,7 +104,6 @@ public class Block : MonoBehaviour {
 
     IEnumerator GetDropEnumerator() {
         float nextFoot = this.pos.y + 1;
-        Block downBlock = blockController.BlockAtPos(this.pos.x, nextFoot);
 
         while (true) {
             float gravityPerFrame = blockController.gravity * Time.deltaTime;
