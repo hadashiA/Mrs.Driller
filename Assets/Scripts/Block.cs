@@ -45,12 +45,14 @@ public class Block : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
-        if (this.shake != null && this.shake.MoveNext()) {
+        if (this.shake != null && !this.shake.MoveNext()) {
             this.shake = null;
             this.drop = GetDropEnumerator();
-        } else if (this.drop != null && this.drop.MoveNext()) {
+        } else if (this.drop != null && !this.drop.MoveNext()) {
             this.drop = null;
         }
+
+        transform.position = blockController.ScreenPos(this.pos);
     }
     
     IEnumerator GetShakeEnumerator() {
