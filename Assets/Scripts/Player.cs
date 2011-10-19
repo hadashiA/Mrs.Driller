@@ -1,5 +1,4 @@
 using UnityEngine;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -8,13 +7,14 @@ enum Direction {
 };
 
 public class Player : MonoBehaviour {
-    public bool idle  = true;
-
     Direction direction;
     float nextDigTime = 0;
 
     StageState state;
     BlockController blockController;
+
+    IEnumerator walk;
+    IEnumerator drop;
 
     // Use this for initialization
     void Start() {
@@ -24,87 +24,122 @@ public class Player : MonoBehaviour {
 
         this.direction = Direction.Down;
 
-        Drop();
+        this.drop = Drop();
     }
     
     // Update is called once per frame
     void Update() {
-        Drop();
-        
+        // Drop
+        if (this.drop != null && !this.drop.MoveNext()) {
+            this.drop = null;
+        }
+
         // Dig
         if (Input.GetButton("Fire1") && Time.time > nextDigTime) {
             nextDigTime = Time.time + state.digTimeRate;
             Dig();
         }
         
-        if (Input.GetKey(KeyCode.LeftArrow)) {
-            this.direction = Direction.Left;
-            WalkTo(Direction.Left);
-            blockController.Point(state.playerRow, state.playerCol - 1);
-
-        } else if (Input.GetKey(KeyCode.RightArrow)) {
-            this.direction = Direction.Right;
-            WalkTo(Direction.Right);
-            blockController.Point(state.playerRow, state.playerCol + 1);
-
-        } else if (Input.GetKey(KeyCode.UpArrow)) {
-            this.direction = Direction.Up;
-            blockController.Point(state.playerRow - 1, state.playerCol);
-
-        } else if (Input.GetKey(KeyCode.DownArrow)) {
-            this.direction = Direction.Down;
-            blockController.Point(state.playerRow + 1, state.playerCol);
-        }
-    }
-
-    void Drop() {
-        if (this.idle) {
-            int downRow = state.playerRow + 1;
-            if (downRow < state.numBlockRows &&
-                state.blocks[downRow, state.playerCol] == null) {
-                state.playerRow = downRow;
-                this.idle = false;
+        if (this.walk == null) {
+            if (Input.GetKey(KeyCode.LeftArrow)) {
+                this.walk = WalkTo(Direction.Left);
+                
+            } else if (Input.GetKey(KeyCode.RightArrow)) {
+                this.walk = WalkTo(Direction.Right);
+                
+            } else if (Input.GetKey(KeyCode.UpArrow)) {
+                this.direction = Direction.Up;
+                
+            } else if (Input.GetKey(KeyCode.DownArrow)) {
+                this.direction = Direction.Down;
             }
+
+        } else if (!this.walk.MoveNext()) {
+            this.walk = null;
         }
     }
 
     void Dig() {
-        if (this.idle) {
-            switch (this.direction) {
-                case Direction.Down:
-                    blockController.DigAt(state.playerRow + 1, state.playerCol);
-                    break;
-                case Direction.Up:
-                    blockController.DigAt(state.playerRow - 1, state.playerCol);
-                    break;
-                case Direction.Left:
-                    blockController.DigAt(state.playerRow, state.playerCol - 1);
-                    break;
-                case Direction.Right:
-                    blockController.DigAt(state.playerRow, state.playerCol + 1);
-                    break;
-            }
+        switch (this.direction) {
+            case Direction.Down:
+                this.drop = Drop();
+                break;
+            case Direction.Up:
+                break;
+            case Direction.Left:
+                break;
+            case Direction.Right:
+                break;
         }
     }
 
-    void WalkTo(Direction direction) {
-        if (this.idle) {
-            switch (direction) {
-                case Direction.Left:
-                    if (state.playerCol > 0 &&
-                        state.blocks[state.playerRow, state.playerCol - 1] == null) {
-                        state.playerCol--;
-                        this.idle = false;
-                    }
-                    break;
-                case Direction.Right:
-                    if (state.playerCol < state.numBlockCols - 1 &&
-                        state.blocks[state.playerRow, state.playerCol + 1] == null) {
-                        state.playerCol++;
-                        this.idle = false;
-                    }
-                    break;
+
+    GameObject NextBlock(Direction d) {
+        Vector2 pos = transform.position;
+
+        switch (d) {
+            case Direction.Left:
+                pos.x -= state.blockSize * 0.5f;
+                break;
+            case Direction.Right:
+                pos.x += state.blockSize * 0.5f;
+                break;
+            case Direction.Up:
+                pos.y -= state.blockSize * 0.5f;
+                break;
+            case Direction.Down:
+                pos.y += state.blockSize * 0.5f;
+                break;
+        }
+
+        return blockController.BlockAtPos(pos);
+    }
+
+    IEnumerator WalkTo(Direction d) {
+        this.direction = d;
+
+        if ((d == Direction.Left && NextBlock(Direction.Left) != null) ||
+            (d == Direction.Right && NextBlock(Direction.Right) != null)) {
+            yield break;
+        }
+
+        float walkFrom = transform.position.x;
+        int sign = (d == Direction.Left ? -1 : 1);
+        float walkTotal = 0;
+        float distance = state.blockSize;
+
+        while (walkTotal < distance * 0.9) {
+            float speedPerFrame = state.walkSpeed * Time.deltaTime;
+            transform.Translate(speedPerFrame * sign, 0, 0);
+            walkTotal += speedPerFrame;
+            yield return true;
+        }
+        
+        transform.position =
+            new Vector2(walkFrom + distance * sign, transform.position.y);
+    }
+
+    IEnumerator Drop() {
+        GameObject downBlock = NextBlock(Direction.Down);
+
+        while (downBlock == null) {
+            float gravityPerFrame = state.gravity * Time.deltaTime;
+            float nextY = transform.position.y - gravityPerFrame;
+
+            downBlock = blockController.BlockAtPos(
+                new Vector2(transform.position.x, nextY - (state.blockSize * 0.5f))
+            );
+
+            if (downBlock != null) {
+                transform.position = new Vector2(
+                    transform.position.x,
+                    downBlock.transform.position.y + state.blockSize
+                );
+                yield break;
             }
+
+            transform.Translate(0, -gravityPerFrame, 0);
+            yield return true;
         }
     }
 }
