@@ -17,6 +17,7 @@ public class BlockController : MonoBehaviour {
     }
 
     Block[,] blocks;
+    List<Block> dropBlocks;
 
     public Vector2 ScreenPos(Vector2 pos) {
         return new Vector2(
@@ -45,12 +46,16 @@ public class BlockController : MonoBehaviour {
             int col = Mathf.FloorToInt(block.pos.x);
             int row = Mathf.FloorToInt(block.pos.y);
             if (this.blocks[row, col] != null) {
+                UnFixed(block);
                 Destroy(block.gameObject);
-                this.blocks[row, col] = null;
 
                 if (row > 0) {
+                    
                     Block upBlock = this.blocks[row - 1, col];
-                    if (upBlock != null) upBlock.Drop();
+                    if (upBlock != null) {
+                        UnFixed(upBlock);
+                        upBlock.Drop();
+                    }
                 }
             }            
         }
@@ -63,6 +68,13 @@ public class BlockController : MonoBehaviour {
         if (this.blocks[row, col] == null) {
             this.blocks[row, col] = block;
         }
+    }
+
+    public void UnFixed(Block block) {
+        int col = Mathf.FloorToInt(block.pos.x);
+        int row = Mathf.FloorToInt(block.pos.y);
+
+        this.blocks[row, col] = null;
     }
 
     // Use this for initialization

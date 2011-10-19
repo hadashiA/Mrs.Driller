@@ -44,9 +44,7 @@ public class Block : MonoBehaviour {
         if (this.shake != null && !this.shake.MoveNext()) {
             this.shake = null;
             this.drop = DropStart();
-        }
-
-        if (this.drop != null && !this.drop.MoveNext()) {
+        } else if (this.drop != null && !this.drop.MoveNext()) {
             this.drop = null;
         }
 
@@ -63,12 +61,12 @@ public class Block : MonoBehaviour {
             nextFoot = this.pos.y + gravityPerFrame + 1;
             downBlock = blockController.BlockAtPos(this.pos.x, nextFoot);
 
-            if (this.pos.y % 1 > 0.5f) {
+            if (nextFoot % 1 > 0.5f) 
                 blockController.Fixed(this);
-            }
-
+            
             if (downBlock != null) {
                 this.pos.y = downBlock.pos.y - 1;
+                blockController.Fixed(this);
                 yield break;
             }
 
@@ -84,8 +82,7 @@ public class Block : MonoBehaviour {
         while (true) {
             float total = Time.time - beforeShake;
             float progress = total / this.shakeTime;
-            Debug.Log(progress);
-
+ 
             if (total > this.shakeTime) {
                 pos.x = beforeX;
                 yield break;
@@ -94,6 +91,5 @@ public class Block : MonoBehaviour {
                 yield return true;
             }
         }
-        // yield return new WaitForSeconds(this.shakeTime);
-    }
+     }
 }
