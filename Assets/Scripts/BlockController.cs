@@ -50,11 +50,10 @@ public class BlockController : MonoBehaviour {
                 Destroy(block.gameObject);
 
                 if (row > 0) {
-                    
                     Block upBlock = this.blocks[row - 1, col];
                     if (upBlock != null) {
-                        UnFixed(upBlock);
-                        upBlock.Drop();
+                        FindDropBlocks(upBlock);
+                        Debug.Log(this.dropBlocks.Count);
                     }
                 }
             }            
@@ -80,6 +79,7 @@ public class BlockController : MonoBehaviour {
     // Use this for initialization
     void Start() {
         this.blocks = new Block[this.numBlockRows, this.numBlockCols];
+        this.dropBlocks = new List<Block>();
 
         // random test data setting
         for (int row = 5; row < this.numBlockRows; row++) {
@@ -101,7 +101,22 @@ public class BlockController : MonoBehaviour {
             }
         }
     }
+
+    void Update() {
+    }
     
+    void FindDropBlocks(Block block) {
+        this.dropBlocks.Add(block);
+
+        int col = Mathf.FloorToInt(block.pos.x);
+        int row = Mathf.FloorToInt(block.pos.y);
+
+        if (row > 0) {
+            Block upBlock = this.blocks[row - 1, col];
+            if (upBlock != null) FindDropBlocks(upBlock);
+        }
+    }
+
     void Grouping(BlockGroup group, Block block) {
         if (block.group == group) return;
         
