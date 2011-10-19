@@ -20,7 +20,7 @@ public class Block : MonoBehaviour {
 
     public float shakeTime = 0.5f;
 
-    public bool unfixed {
+    public bool dropStarted {
         get { return this.shake != null || this.drop != null; }
     }
 
@@ -37,7 +37,14 @@ public class Block : MonoBehaviour {
         this.shake = GetShakeEnumerator();
     }
 
-    public void DropNext() {
+    // Use this for initialization
+    void Start() {
+        GameObject game = GameObject.Find("Game");
+        this.blockController = game.GetComponent<BlockController>();
+    }
+
+    // Update is called once per frame
+    void Update() {
         if (this.shake != null && this.shake.MoveNext()) {
             this.shake = null;
             this.drop = GetDropEnumerator();
@@ -53,9 +60,10 @@ public class Block : MonoBehaviour {
         while (true) {
             float total = Time.time - beforeShake;
             float progress = total / this.shakeTime;
- 
+
             if (total > this.shakeTime) {
                 pos.x = beforeX;
+                blockController.UnFixed(this);
                 yield break;
             } else {
                 pos.x += 0.02f * (progress) * (progress > 0.5 ? -1 : 1);
@@ -86,16 +94,5 @@ public class Block : MonoBehaviour {
             this.pos.y += gravityPerFrame;
             yield return true;
         }
-    }
-    
-    // Use this for initialization
-    void Start() {
-        GameObject game = GameObject.Find("Game");
-        this.blockController = game.GetComponent<BlockController>();
-    }
-    
-    // Update is called once per frame
-    void Update() {
-        transform.position = blockController.ScreenPos(this.pos);
     }
 }

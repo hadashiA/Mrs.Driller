@@ -101,12 +101,11 @@ public class BlockController : MonoBehaviour {
 
     void Update() {
         foreach (Block dropBlock in this.dropBlocks) {
-            dropBlock.DropNext();
         }
     }
     
     void SetDropBlocks(Block block) {
-        if (block.unfixed) return;
+        if (block.dropStarted) return;
 
         this.dropBlocks.Insert(0, block);
         block.DropStart();
