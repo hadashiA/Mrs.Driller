@@ -79,14 +79,13 @@ public class Player : MonoBehaviour {
     }
 
     void Dig() {
-        Block block = NextBlock(this.direction);
-        blockController.Remove(block);
+        blockController.RemoveAtPos(NextPos(this.direction));
         if (this.direction == Direction.Down) {
             this.drop = GetDropEnumerator();
         }
     }
 
-    Block NextBlock(Direction d) {
+    Vector2 NextPos(Direction d) {
         float x = this.pos.x;
         float y = this.pos.y;
 
@@ -105,7 +104,11 @@ public class Player : MonoBehaviour {
                 break;
         }
 
-        return blockController.BlockAtPos(x, y);
+        return new Vector2(x, y);
+    }
+
+    Block NextBlock(Direction d) {
+        return blockController.BlockAtPos(NextPos(d));
     }
 
     IEnumerator GetWalkEnumerator(Direction d) {

@@ -39,21 +39,25 @@ public class BlockController : MonoBehaviour {
         return BlockAtPos(new Vector2(x, y));
     }
 
-    public void Remove(Block block) {
-        if (block != null) {
-            int col = Mathf.FloorToInt(block.pos.x);
-            int row = Mathf.FloorToInt(block.pos.y);
-            if (this.blocks[row, col] != null) {
-                UnFixed(block);
-                Destroy(block.gameObject);
+    public void RemoveAtPos(Vector2 pos) {
+        Block block = BlockAtPos(pos);
+        if (block == null)  return;
+        
+        foreach (Block member in block.group) {
+            int col = Mathf.FloorToInt(pos.x);
+            int row = Mathf.FloorToInt(pos.y);
 
-                if (row > 0) {
-                    Block upBlock = this.blocks[row - 1, col];
-                    if (upBlock != null) {
-                        SetDropBlocks(upBlock);
-                    }
-                }
-            }            
+            if (this.blocks[row, col] != null) {
+                UnFixed(member);
+                Destroy(member.gameObject);
+
+                //     if (row > 0) {
+                //         Block upBlock = this.blocks[row - 1, col];
+                //         if (upBlock != null) {
+                //             SetDropBlocks(upBlock);
+                //         }
+                //     }
+            }
         }
     }
 
@@ -79,6 +83,11 @@ public class BlockController : MonoBehaviour {
                 block.pos   = pos;
 
                 this.blocks[row, col] = block;
+
+                if (block.group == null) {
+                    BlockGroup group = new BlockGroup();
+                    Grouping(group, block);
+                }
             }
         }
     }
@@ -132,9 +141,7 @@ public class BlockController : MonoBehaviour {
     }
 
     void Grouping(BlockGroup group, Block block) {
-        if (block.group == group) return;
-        
-        block.group = group;
+        if (!group.Add(block)) return;
 
         // 上下左右
         for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {

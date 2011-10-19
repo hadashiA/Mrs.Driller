@@ -5,30 +5,32 @@ using System.Collections.Generic;
 public class BlockGroup {
     static int nextId = 0;
 
-    int id;
+    // int id = 0;
 
     HashSet<Block> blocks;
 
     public BlockGroup() {
-        this.id = nextId++;
+        // this.id = nextId++;
+        this.blocks = new HashSet<Block>();
     }
 
-    public void Add(Block block) {
-        blocks.Add(block);
+    public bool Add(Block block) {
+        block.group = this;
+        return blocks.Add(block);
     }
 
-    public static bool operator==(BlockGroup a, BlockGroup b) {
-        return a.id == b.id;
-    }
-        
-    public static bool operator!=(BlockGroup a, BlockGroup b) {
-        return a.id != b.id;
+    public IEnumerator<Block> GetEnumerator() {
+        foreach (Block block in this.blocks) {
+            yield return block;
+        }
     }
 }
 
 public class Block : MonoBehaviour {
     public int color;
+
     public BlockGroup group;
+
     public Vector2 pos;
 
     public float shakeTime = 0.5f;
