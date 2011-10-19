@@ -56,6 +56,15 @@ public class BlockController : MonoBehaviour {
         }
     }
 
+    public void Fixed(Block block) {
+        int col = Mathf.FloorToInt(block.pos.x);
+        int row = Mathf.FloorToInt(block.pos.y);
+
+        if (this.blocks[row, col] == null) {
+            this.blocks[row, col] = block;
+        }
+    }
+
     // Use this for initialization
     void Start() {
         this.blocks = new Block[this.numBlockRows, this.numBlockCols];
