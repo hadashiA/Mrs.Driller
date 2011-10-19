@@ -14,6 +14,6 @@ public class ScoreCounter : MonoBehaviour {
     
     // Update is called once per frame
     void Update() {
-        this.meterText.text = this.player.pos.y.ToString();
+        this.meterText.text = this.player.pos.y.ToString("F1");
     }
 }

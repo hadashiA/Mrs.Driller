@@ -26,15 +26,15 @@ public class Player : MonoBehaviour {
         this.blockController = game.GetComponent<BlockController>();
 
         this.direction = Direction.Down;
-        // this.drop = Drop();
+        this.drop = Drop();
     }
     
     // Update is called once per frame
     void Update() {
         // Drop
-        // if (this.drop != null && !this.drop.MoveNext()) {
-        //     this.drop = null;
-        // }
+        if (this.drop != null && !this.drop.MoveNext()) {
+            this.drop = null;
+        }
 
         // Dig
         if (Input.GetButton("Fire1") && Time.time > nextDigTime) {
@@ -72,24 +72,25 @@ public class Player : MonoBehaviour {
     }
 
     Block NextBlock(Direction d) {
-        Vector2 nextPos = this.pos;
+        float x = this.pos.x;
+        float y = this.pos.y;
 
         switch (d) {
             case Direction.Left:
-                pos.x -= 1;
+                x -= 1;
                 break;
             case Direction.Right:
-                pos.x += 1;
+                x += 1;
                 break;
             case Direction.Up:
-                pos.y += 1;
+                y -= 1;
                 break;
             case Direction.Down:
-                pos.y -= 1;
+                y += 1;
                 break;
         }
 
-        return blockController.BlockAtPos(this.pos);
+        return blockController.BlockAtPos(x, y);
     }
 
     IEnumerator WalkTo(Direction d) {
@@ -119,15 +120,16 @@ public class Player : MonoBehaviour {
 
         while (downBlock == null) {
             float gravityPerFrame = blockController.gravity * Time.deltaTime;
-            float nextY = this.pos.y + gravityPerFrame;
+            float nextFoot = this.pos.y + gravityPerFrame + 1;
             
-            downBlock = blockController.BlockAtPos(new Vector2(this.pos.x, nextY));
+            downBlock =
+                blockController.BlockAtPos(new Vector2(this.pos.x, nextFoot));
             if (downBlock != null) {
                 this.pos.y = downBlock.pos.y - 1;
                 yield break;
             }
 
-            this.pos.y -= gravityPerFrame;
+            this.pos.y += gravityPerFrame;
             yield return true;
         }
     }

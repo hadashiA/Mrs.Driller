@@ -29,6 +29,8 @@ public class BlockController : MonoBehaviour {
         int col = Mathf.FloorToInt(pos.x);
         int row = Mathf.FloorToInt(pos.y);
 
+        Debug.Log("col:" + col + " row:" + row);
+
         if (col < 0 || col >= this.numBlockCols ||
             row < 0 || row >= this.numBlockRows) {
             return null;
@@ -62,6 +64,7 @@ public class BlockController : MonoBehaviour {
                 
                 Block block = blockObj.GetComponent<Block>();
                 block.color = materialIndex;
+                block.pos   = pos;
 
                 this.blocks[row, col] = block;
             }

@@ -11,6 +11,10 @@ public class Block : MonoBehaviour {
 
     IEnumerator<float> shake;
 
+    public override string ToString() {
+        return "color:" + this.color + " pos:" + pos;
+    }
+
     // Use this for initialization
     void Start() {
         GameObject game = GameObject.Find("Game");
