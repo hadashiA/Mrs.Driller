@@ -4,16 +4,16 @@ using System.Collections;
 public class ScoreCounter : MonoBehaviour {
     public GUIText meterText;
 
-    StageState state;
+    Player player;
 
     // Use this for initialization
     void Start() {
-        GameObject game = GameObject.Find("Game");
-        this.state = game.GetComponent<StageState>();
+        GameObject playerObj = GameObject.Find("Player");
+        this.player = playerObj.GetComponent<Player>();
     }
     
     // Update is called once per frame
     void Update() {
-        this.meterText.text = state.playerRow.ToString();
+        this.meterText.text = this.player.pos.y.ToString();
     }
 }

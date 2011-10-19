@@ -7,10 +7,14 @@ enum Direction {
 };
 
 public class Player : MonoBehaviour {
+    public float walkSpeed = 3.0f;
+    public float digTimeRate = 0.5f;
+
+    public Vector2 pos = new Vector2(7, 0);
+
     Direction direction;
     float nextDigTime = 0;
 
-    StageState state;
     BlockController blockController;
 
     IEnumerator walk;
@@ -19,24 +23,22 @@ public class Player : MonoBehaviour {
     // Use this for initialization
     void Start() {
         GameObject game = GameObject.Find("Game");
-        this.state = game.GetComponent<StageState>();
         this.blockController = game.GetComponent<BlockController>();
 
         this.direction = Direction.Down;
-
-        this.drop = Drop();
+        // this.drop = Drop();
     }
     
     // Update is called once per frame
     void Update() {
         // Drop
-        if (this.drop != null && !this.drop.MoveNext()) {
-            this.drop = null;
-        }
+        // if (this.drop != null && !this.drop.MoveNext()) {
+        //     this.drop = null;
+        // }
 
         // Dig
         if (Input.GetButton("Fire1") && Time.time > nextDigTime) {
-            nextDigTime = Time.time + state.digTimeRate;
+            nextDigTime = Time.time + this.digTimeRate;
             Dig();
         }
         
@@ -57,35 +59,37 @@ public class Player : MonoBehaviour {
         } else if (!this.walk.MoveNext()) {
             this.walk = null;
         }
+
+        transform.position = blockController.ScreenPos(this.pos);
     }
 
     void Dig() {
-        GameObject block = NextBlock(this.direction);
+        Block block = NextBlock(this.direction);
         blockController.Remove(block);
         if (this.direction == Direction.Down) {
-            this.drop = Drop();
+            // this.drop = Drop();
         }
     }
 
-    GameObject NextBlock(Direction d) {
-        Vector2 pos = transform.position;
+    Block NextBlock(Direction d) {
+        Vector2 nextPos = this.pos;
 
         switch (d) {
             case Direction.Left:
-                pos.x -= state.blockSize;
+                pos.x -= 1;
                 break;
             case Direction.Right:
-                pos.x += state.blockSize;
+                pos.x += 1;
                 break;
             case Direction.Up:
-                pos.y += state.blockSize;
+                pos.y += 1;
                 break;
             case Direction.Down:
-                pos.y -= state.blockSize;
+                pos.y -= 1;
                 break;
         }
 
-        return blockController.BlockAtPos(pos);
+        return blockController.BlockAtPos(this.pos);
     }
 
     IEnumerator WalkTo(Direction d) {
@@ -96,42 +100,34 @@ public class Player : MonoBehaviour {
             yield break;
         }
 
-        float walkFrom = transform.position.x;
+        float walkFrom = this.pos.x;
         int sign = (d == Direction.Left ? -1 : 1);
         float walkTotal = 0;
-        float distance = state.blockSize;
 
-        while (walkTotal < distance * 0.9) {
-            float speedPerFrame = state.walkSpeed * Time.deltaTime;
-            transform.Translate(speedPerFrame * sign, 0, 0);
+        while (walkTotal < 0.9f) {
+            float speedPerFrame = this.walkSpeed * Time.deltaTime;
+            this.pos.x += speedPerFrame * sign;
             walkTotal += speedPerFrame;
             yield return true;
         }
         
-        transform.position =
-            new Vector2(walkFrom + distance * sign, transform.position.y);
+        this.pos.x = walkFrom + sign;
     }
 
     IEnumerator Drop() {
-        GameObject downBlock = NextBlock(Direction.Down);
+        Block downBlock = NextBlock(Direction.Down);
 
         while (downBlock == null) {
-            float gravityPerFrame = state.gravity * Time.deltaTime;
-            float nextY = transform.position.y - gravityPerFrame;
-
-            downBlock = blockController.BlockAtPos(
-                new Vector2(transform.position.x, nextY)
-            );
-
+            float gravityPerFrame = blockController.gravity * Time.deltaTime;
+            float nextY = this.pos.y + gravityPerFrame;
+            
+            downBlock = blockController.BlockAtPos(new Vector2(this.pos.x, nextY));
             if (downBlock != null) {
-                transform.position = new Vector2(
-                    transform.position.x,
-                    downBlock.transform.position.y + state.blockSize
-                );
+                this.pos.y = downBlock.pos.y - 1;
                 yield break;
             }
 
-            transform.Translate(0, -gravityPerFrame, 0);
+            this.pos.y -= gravityPerFrame;
             yield return true;
         }
     }

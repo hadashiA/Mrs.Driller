@@ -3,111 +3,78 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class BlockController : MonoBehaviour {
-    StageState state;
+    public float gravity = 5.0f;
+    public float cameraFixedY = -5.0f;
 
-    float scrolledY = 0;
+    public int numBlockRows = 100;
+    public int numBlockCols = 15;
 
-    GameObject player;
+    public GameObject blockPrefab;
+    public Material[] blockMaterials;
 
-    GameObject blockGroupPrefab;
 
-    public GameObject BlockAtPos(Vector2 pos) {
-        int col = Mathf.FloorToInt(pos.x * state.blockSize);
-        int row = -Mathf.FloorToInt((pos.y - scrolledY) * state.blockSize);
+    public float blockSize {
+        get { return this.blockPrefab.transform.localScale.x; }
+    }
 
-        if (col < 0 || col >= state.numBlockCols ||
-            row < 0 || row >= state.numBlockRows) {
+    Block[,] blocks;
+
+    public Vector2 ScreenPos(Vector2 pos) {
+        return new Vector2(
+            pos.x, -(pos.y)
+        );
+    }
+
+    public Block BlockAtPos(Vector2 pos) {
+        int col = Mathf.FloorToInt(pos.x);
+        int row = Mathf.FloorToInt(pos.y);
+
+        if (col < 0 || col >= this.numBlockCols ||
+            row < 0 || row >= this.numBlockRows) {
             return null;
         } else {
-            return state.blocks[row, col];
+            return this.blocks[row, col];
         }
     }
 
-    public GameObject BlockAtPos(float x, float y) {
+    public Block BlockAtPos(float x, float y) {
         return BlockAtPos(new Vector2(x, y));
     }
 
-    public void Remove(GameObject block) {
-        if (block == null) return;
-        
-        Vector2 pos = block.transform.position;
-        int col = Mathf.FloorToInt(pos.x * state.blockSize);
-        int row = -Mathf.FloorToInt((pos.y - scrolledY) * state.blockSize);
-
-        Destroy(block);
-        state.blocks[row, col] = null;
-
-        // GameObject upBlock = this.blocks[row, col];
-        // if (upBlock != null) {
-        
-        // }
+    public void Remove(Block block) {
     }
 
     // Use this for initialization
     void Start() {
-        this.state = GetComponent<StageState>();
-        state.blocks = new GameObject[state.numBlockRows, state.numBlockCols];
+        this.blocks = new Block[this.numBlockRows, this.numBlockCols];
 
         // random test data setting
-        for (int row = 5; row < state.numBlockRows; row++) {
-            for (int col = 0; col < state.numBlockCols; col++) {
-                GameObject block = Instantiate(
-                    state.blockPrefab, PositionAt(row, col), Quaternion.identity
+        for (int row = 5; row < this.numBlockRows; row++) {
+            for (int col = 0; col < this.numBlockCols; col++) {
+                Vector2 pos = new Vector2(col, row);
+
+                GameObject blockObj = Instantiate(
+                    this.blockPrefab, ScreenPos(pos), Quaternion.identity
                 ) as GameObject;
+
+                int materialIndex = Random.Range(0, this.blockMaterials.Length);
+                blockObj.renderer.material = this.blockMaterials[materialIndex];
                 
-                int materialIndex = Random.Range(0, state.blockMaterials.Length);
-                block.renderer.material = state.blockMaterials[materialIndex];
-                block.name = block.renderer.material.name;
-                state.blocks[row, col] = block;
+                Block block = blockObj.GetComponent<Block>();
+                block.color = materialIndex;
+
+                this.blocks[row, col] = block;
             }
         }
-
-        this.player =
-            Instantiate(
-                state.playerPrefab,
-                PositionAt(state.playerRow, state.playerCol),
-                Quaternion.identity
-            ) as GameObject;
     }
     
     void Update() {
-        // Scroll blocks
-        Vector2 playerPos = player.transform.position;
-        if (playerPos.y < state.cameraFixedY) {
-            float cameraDiff = state.cameraFixedY - playerPos.y;
-            
-            // Debug.Log("playerY:" + player.transform.position.y +
-            //           " fixedY:" + state.cameraFixedY + 
-            //           " cameraDiff" + cameraDiff);
-            
-            float nextScrolledY = this.scrolledY + cameraDiff;
-            // if (nextScrolledY % state.blockSize > 0.9f) {
-            //     nextScrolledY = Mathf.Floor(this.scrolledY) + state.blockSize;
-            //     cameraDiff = nextScrolledY - this.scrolledY;
-            // }
-
-            player.transform.Translate(0, cameraDiff, 0);
-            foreach (GameObject block in
-                     GameObject.FindGameObjectsWithTag("Block")) {
-                block.transform.Translate(0, cameraDiff, 0);
-            } 
-
-            this.scrolledY = nextScrolledY;
-        }
     }
 
-    Vector2 PositionAt(int row, int col) {
-        return new Vector2(
-            col * state.blockSize,
-            -((row + this.scrolledY) * state.blockSize)
-        );
-    }
-
-    void Grouping(GameObject parent, GameObject block) {
-        if (block.transform.parent == parent.transform) return;
+    void Grouping(BlockGroup group, Block block) {
+        if (block.group == group) return;
         
-        block.transform.parent = parent.transform;
-        Vector2 pos = block.transform.position;
+        block.group = group;
 
         // 上下左右
         for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
@@ -115,13 +82,13 @@ public class BlockController : MonoBehaviour {
                 if ((rowOffset != 0 && colOffset != 0) ||
                     (rowOffset == 0 && colOffset == 0)) continue;
 
-                GameObject nextBlock = BlockAtPos(
-                    pos.x + colOffset * state.blockSize,
-                    pos.y + colOffset * state.blockSize
+                Block nextBlock = BlockAtPos(
+                    block.pos.x + colOffset,
+                    block.pos.y + rowOffset
                 );
                 
-                if (nextBlock != null && nextBlock.name == block.name) 
-                    Grouping(parent, nextBlock);
+                if (nextBlock != null && nextBlock.color == block.color) 
+                    Grouping(group, nextBlock);
             }
         }
     }
