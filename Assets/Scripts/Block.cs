@@ -37,12 +37,8 @@ public class Block : MonoBehaviour {
         get { return this.shake != null;  }
     }
 
-    public bool unfixed {
-        get { return this.drop != null; }
-    }
-
     public bool dropStarted {
-        get { return this.shaking || this.unfixed; }
+        get { return this.shaking || this.drop != null; }
     }
 
     public bool dropEnded {
@@ -103,8 +99,6 @@ public class Block : MonoBehaviour {
     }
 
     IEnumerator GetDropEnumerator() {
-        float nextFoot = this.pos.y + 1;
-
         while (true) {
             float gravityPerFrame = blockController.gravity * Time.deltaTime;
             this.pos.y += gravityPerFrame;

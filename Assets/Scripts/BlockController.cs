@@ -85,7 +85,7 @@ public class BlockController : MonoBehaviour {
 
     void Update() {
         foreach (Block dropBlock in this.dropBlocks) {
-            if (dropBlock.unfixed) {
+            if (!dropBlock.shaking) {
                 UnFixed(dropBlock);
             }
 
@@ -119,7 +119,7 @@ public class BlockController : MonoBehaviour {
     void SetDropBlocks(Block block) {
         if (block.dropStarted) return;
 
-        this.dropBlocks.Insert(0, block);
+        this.dropBlocks.Add(block);
         block.DropStart();
 
         int col = Mathf.FloorToInt(block.pos.x);
