@@ -12,7 +12,6 @@ public class BlockController : MonoBehaviour {
     public GameObject blockPrefab;
     public Material[] blockMaterials;
 
-
     public float blockSize {
         get { return this.blockPrefab.transform.localScale.x; }
     }
@@ -29,8 +28,6 @@ public class BlockController : MonoBehaviour {
         int col = Mathf.FloorToInt(pos.x);
         int row = Mathf.FloorToInt(pos.y);
 
-        Debug.Log("col:" + col + " row:" + row);
-
         if (col < 0 || col >= this.numBlockCols ||
             row < 0 || row >= this.numBlockRows) {
             return null;
@@ -44,6 +41,14 @@ public class BlockController : MonoBehaviour {
     }
 
     public void Remove(Block block) {
+        if (block != null) {
+            int col = Mathf.FloorToInt(block.pos.x);
+            int row = Mathf.FloorToInt(block.pos.y);
+            if (this.blocks[row, col] != null) {
+                Destroy(block.gameObject);
+                this.blocks[row, col] = null;
+            }            
+        }
     }
 
     // Use this for initialization
@@ -71,9 +76,6 @@ public class BlockController : MonoBehaviour {
         }
     }
     
-    void Update() {
-    }
-
     void Grouping(BlockGroup group, Block block) {
         if (block.group == group) return;
         

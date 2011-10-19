@@ -23,5 +23,6 @@ public class Block : MonoBehaviour {
     
     // Update is called once per frame
     void Update() {
+        transform.position = blockController.ScreenPos(this.pos);
     }
 }

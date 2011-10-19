@@ -12,6 +12,8 @@ public class Player : MonoBehaviour {
 
     public Vector2 pos = new Vector2(7, 0);
 
+    public float cameraFixed = 6.0f;
+
     Direction direction;
     float nextDigTime = 0;
 
@@ -42,6 +44,7 @@ public class Player : MonoBehaviour {
             Dig();
         }
         
+        // Walk
         if (this.walk == null) {
             if (Input.GetKey(KeyCode.LeftArrow)) {
                 this.walk = WalkTo(Direction.Left);
@@ -63,11 +66,23 @@ public class Player : MonoBehaviour {
         transform.position = blockController.ScreenPos(this.pos);
     }
 
+    void LateUpdate() {
+        // Scroll
+        if (this.cameraFixed < this.pos.y) {
+            float cameraDiff = this.pos.y - this.cameraFixed;
+            transform.Translate(0, cameraDiff, 0);
+            foreach (GameObject block in
+                     GameObject.FindGameObjectsWithTag("Block")) {
+                block.transform.Translate(0, cameraDiff, 0);
+            }
+        }
+    }
+
     void Dig() {
         Block block = NextBlock(this.direction);
         blockController.Remove(block);
         if (this.direction == Direction.Down) {
-            // this.drop = Drop();
+            this.drop = Drop();
         }
     }
 
