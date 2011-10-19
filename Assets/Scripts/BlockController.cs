@@ -13,7 +13,7 @@ public class BlockController : MonoBehaviour {
 
     public GameObject BlockAtPos(Vector2 pos) {
         int col = Mathf.FloorToInt(pos.x * state.blockSize);
-        int row = -Mathf.FloorToInt((pos.y + scrolledY) * state.blockSize);
+        int row = -Mathf.FloorToInt((pos.y - scrolledY) * state.blockSize);
 
         if (col < 0 || col >= state.numBlockCols ||
             row < 0 || row >= state.numBlockRows) {
@@ -36,6 +36,11 @@ public class BlockController : MonoBehaviour {
 
         Destroy(block);
         state.blocks[row, col] = null;
+
+        // GameObject upBlock = this.blocks[row, col];
+        // if (upBlock != null) {
+        
+        // }
     }
 
     // Use this for initialization
@@ -66,6 +71,27 @@ public class BlockController : MonoBehaviour {
     }
     
     void Update() {
+        // Scroll blocks
+        if (player.transform.position.y < state.cameraFixedY) {
+            float cameraDiff = state.cameraFixedY - player.transform.position.y;
+            
+            // Debug.Log("playerY" + player.transform.position.y + " fixed:" + state.cameraFixedY + " cameraDiff:" + cameraDiff);
+
+            // float scroll = this.scrolledY + cameraDiff;
+            // float nextFixed = Mathf.Ceil(scroll / state.blockSize);
+            
+            // if (nextFixed - scroll < 0.1f) {
+            //     cameraDiff = 
+            // }
+
+            player.transform.Translate(0, cameraDiff, 0);
+            foreach (GameObject block in
+                     GameObject.FindGameObjectsWithTag("Block")) {
+                block.transform.Translate(0, cameraDiff, 0);
+            } 
+
+            this.scrolledY += cameraDiff;
+        }
     }
 
     Vector2 PositionAt(int row, int col) {

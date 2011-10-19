@@ -3,7 +3,7 @@ using System.Collections;
 
 public class StageState : MonoBehaviour {
     public float gravity = 5.0f;
-    public int cameraFixedRow = 5;
+    public float cameraFixedY = -5.0f;
     public Vector2 screenTop = Vector2.zero;
 
     public int numBlockRows = 100;
