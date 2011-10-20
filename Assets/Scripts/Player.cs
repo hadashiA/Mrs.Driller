@@ -34,6 +34,8 @@ public class Player : MonoBehaviour {
     IEnumerator walk;
     IEnumerator drop;
 
+    bool walkButtonOn = false;
+
     // Use this for initialization
     void Start() {
         GameObject game = GameObject.Find("Game");
@@ -57,24 +59,28 @@ public class Player : MonoBehaviour {
         }
         
         // Walk
-        if (this.walk == null) {
-            if (Input.GetKey(KeyCode.LeftArrow)) {
-                this.walk = GetWalkEnumerator(Direction.Left);
-                
-            } else if (Input.GetKey(KeyCode.RightArrow)) {
-                this.walk = GetWalkEnumerator(Direction.Right);
-                
-            } else if (Input.GetKey(KeyCode.UpArrow)) {
-                this.direction = Direction.Up;
-                
-            } else if (Input.GetKey(KeyCode.DownArrow)) {
-                this.direction = Direction.Down;
-            }
-
-        } else if (!this.walk.MoveNext()) {
+        if (this.walk != null && !this.walk.MoveNext()) {
             this.walk = null;
             if (blockController.NextBlock(this.pos, Direction.Down) == null) 
                 this.drop = GetDropEnumerator();
+        }
+
+        this.walkButtonOn = false;
+        if (Input.GetKey(KeyCode.LeftArrow)) {
+            this.walkButtonOn = true;
+            if (this.walk == null)
+                this.walk = GetWalkEnumerator(Direction.Left);
+            
+        } else if (Input.GetKey(KeyCode.RightArrow)) {
+            this.walkButtonOn = true;
+            if (this.walk == null) 
+                this.walk = GetWalkEnumerator(Direction.Right);
+            
+        } else if (Input.GetKey(KeyCode.UpArrow)) {
+            this.direction = Direction.Up;
+            
+        } else if (Input.GetKey(KeyCode.DownArrow)) {
+            this.direction = Direction.Down;
         }
     }
 
@@ -108,12 +114,17 @@ public class Player : MonoBehaviour {
                 yield break;
         }
 
-        Block nextBlock = blockController.NextBlock(this.pos, d);
+        Vector2 offset = Vector2.zero;
+        if (this.drop != null) 
+            offset.y += 1;
+        
+        Block nextBlock = blockController.NextBlock(this.pos + offset, d);
         if (nextBlock != null) {
             // いちだんうえにあがれるか
             if (blockController.NextBlock(nextBlock.pos, Direction.Up) == null) {
                 float beforeWait = Time.time;
                 while (Time.time - beforeWait < this.walkToUpperWait) {
+                    if (!walkButtonOn) yield break;
                     yield return true;
                 }
                 this.pos.y -= 1;
@@ -121,12 +132,6 @@ public class Player : MonoBehaviour {
             } else {
                 yield break;
             }
-        }
-
-        // 
-        if (blockController.NextBlock(this.pos + new Vector2(0, -0.6f), d) != null ||
-            blockController.NextBlock(this.pos + new Vector2(0, 0.6f), d) != null ) {
-            yield break;
         }
 
         float walkFrom = this.pos.x;

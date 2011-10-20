@@ -75,8 +75,13 @@ public class BlockController : MonoBehaviour {
         this.unbalanceBlocks = new List<Block>();
 
         // random test data setting
-        for (int row = 5; row < this.numBlockRows; row++) {
+        for (int row = 0; row < this.numBlockRows; row++) {
             for (int col = 0; col < this.numBlockCols; col++) {
+                if (row < 5) {
+                    this.blocks[row, col] = null;
+                    continue;
+                }
+
                 Vector2 pos = new Vector2(col, row);
 
                 GameObject blockObj = Instantiate(
