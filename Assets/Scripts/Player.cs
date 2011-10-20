@@ -123,6 +123,12 @@ public class Player : MonoBehaviour {
             }
         }
 
+        // 
+        if (blockController.NextBlock(this.pos + new Vector2(0, -0.6f), d) != null ||
+            blockController.NextBlock(this.pos + new Vector2(0, 0.6f), d) != null ) {
+            yield break;
+        }
+
         float walkFrom = this.pos.x;
         int sign = (d == Direction.Left ? -1 : 1);
         float walkTotal = 0;
