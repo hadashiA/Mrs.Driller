@@ -4,6 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class BlockGroup {
+    public bool unbalance = false;
+
     HashSet<Block> blocks;
 
     BlockController blockController;
@@ -61,7 +63,27 @@ public class BlockGroup {
     void SearchUnbalanceGroupsRecursive(HashSet<BlockGroup> result,
                                         HashSet<BlockGroup> history,
                                         BlockGroup group) {
+        history.Add(group);
+
+        // 自分が乗っかっているグループ調べる
+        foreach (Block member in group.blocks) {
+            Block underBlock = blockController.NextBlock(member.pos, Direction.Down);
+            if (underBlock != null && underBlock.group != group) {
+                if (history.Contains(underBlock.group)) {
+                    if (!underBlock.group.unbalance) return;
+                } else {
+                    SearchUnbalanceGroupsRecursive(result, history, underBlock.group);
+                }
+            }
+        }
+
+        group.unbalance = true;
         result.Add(group);
+
+        // 自分に乗っているグループ調べる
+        foreach (BlockGroup upperBlock in group.SearchUpperGroups()) {
+            SearchUnbalanceGroupsRecursive(result, history, upperBlock);
+        }
     }
 }
 
