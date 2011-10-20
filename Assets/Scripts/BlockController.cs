@@ -58,18 +58,15 @@ public class BlockController : MonoBehaviour {
         Block block = BlockAtPos(pos);
         if (block == null)  return;
         
+        HashSet<BlockGroup> upperGroups = block.group.SearchUpperGroups();
+
         foreach (Block member in block.group) {
-            int col = Col(member.pos.x);
-            int row = Row(member.pos.y);
+            UnFixed(member);
+            Destroy(member.gameObject);
+        }
 
-            if (this.blocks[row, col] != null) {
-                UnFixed(member);
-                Destroy(member.gameObject);
-
-                Block upperBlock = NextBlock(block.pos, Direction.Up);
-                if (upperBlock != null)
-                    SetUnbalanceBlocks(upperBlock.group);
-            }
+        foreach (BlockGroup upperGroup in upperGroups) {
+            SetUnbalanceBlocks(upperGroup);
         }
     }
 
@@ -113,6 +110,7 @@ public class BlockController : MonoBehaviour {
             block.MoveNext();
 
             if (!block.shaking) {
+                Debug.Log("Unfixed!!:" + block);
                 UnFixed(block);
                 block.DropStart(this.gravity);
             }
@@ -124,13 +122,15 @@ public class BlockController : MonoBehaviour {
             }
 
             Block leftBlock = NextBlock(block.pos, Direction.Left);
-            if (leftBlock != null) {
+            if (leftBlock != null && leftBlock.color == block.color &&
+                leftBlock.group != block.group) {
                 Fixed(block);
                 continue;
             }
 
             Block rightBlock = NextBlock(block.pos, Direction.Right);
-            if (rightBlock != null) {
+            if (rightBlock != null && rightBlock.color == block.color &&
+                rightBlock.group != block.group) {
                 Fixed(block);
                 continue;
             }
@@ -210,9 +210,7 @@ public class BlockController : MonoBehaviour {
     }
 
     void SetUnbalanceBlocks(BlockGroup group) {
-        HashSet<BlockGroup> unbalanceGroups =
-            BlockGroup.SearchUnbalanceGroups(group);
-
+        HashSet<BlockGroup> unbalanceGroups = group.SearchUnbalanceGroups();
         foreach (BlockGroup g in unbalanceGroups) {
             foreach (Block member in g) {
                 this.unbalanceBlocks.Add(member);
@@ -223,5 +221,7 @@ public class BlockController : MonoBehaviour {
         this.unbalanceBlocks.Sort(delegate(Block a, Block b) {
                 return Mathf.FloorToInt(b.pos.y - a.pos.y);
             });
+
+        Debug.Log(this.unbalanceBlocks.Count);
     }
 }

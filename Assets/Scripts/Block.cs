@@ -8,21 +8,6 @@ public class BlockGroup {
 
     BlockController blockController;
 
-    public static HashSet<BlockGroup> SearchUnbalanceGroups(BlockGroup group) {
-        HashSet<BlockGroup> result  = new HashSet<BlockGroup>();
-        HashSet<BlockGroup> history = new HashSet<BlockGroup>();
-
-        SearchUnbalanceGroupsRecursive(result, history, group);
-
-        return result;
-    }
-
-    static void SearchUnbalanceGroupsRecursive(HashSet<BlockGroup> result,
-                                               HashSet<BlockGroup> history,
-                                               BlockGroup group) {
-        result.Add(group);
-    }
-
     public BlockGroup(BlockController blockController) {
         this.blockController = blockController;
         this.blocks = new HashSet<Block>();
@@ -40,6 +25,28 @@ public class BlockGroup {
         }
     }
 
+    public HashSet<BlockGroup> SearchUpperGroups() {
+        HashSet<BlockGroup> result = new HashSet<BlockGroup>();
+
+        foreach (Block member in this.blocks) {
+            Block upperBlock = blockController.NextBlock(member.pos, Direction.Up);
+            if (upperBlock != null && upperBlock.group != this) {
+                result.Add(upperBlock.group);
+            }
+        }
+
+        return result;
+    }
+
+    public HashSet<BlockGroup> SearchUnbalanceGroups() {
+        HashSet<BlockGroup> result  = new HashSet<BlockGroup>();
+        HashSet<BlockGroup> history = new HashSet<BlockGroup>();
+
+        SearchUnbalanceGroupsRecursive(result, history, this);
+
+        return result;
+    }
+
     public IEnumerator<Block> GetEnumerator() {
         foreach (Block block in this.blocks) {
             yield return block;
@@ -49,6 +56,12 @@ public class BlockGroup {
     bool Add(Block block) {
         block.group = this;
         return blocks.Add(block);
+    }
+
+    void SearchUnbalanceGroupsRecursive(HashSet<BlockGroup> result,
+                                        HashSet<BlockGroup> history,
+                                        BlockGroup group) {
+        result.Add(group);
     }
 }
 

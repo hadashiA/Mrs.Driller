@@ -79,8 +79,6 @@ public class Player : MonoBehaviour {
     }
 
     void Dig() {
-        Debug.Log("Dig!!!!");
-
         blockController.RemoveAtPos(
             this.pos + BlockController.Offset[this.direction]
         );
