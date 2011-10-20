@@ -2,10 +2,6 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-enum Direction {
-    Left, Right, Up, Down
-};
-
 public class Player : MonoBehaviour {
     public float walkSpeed = 3.0f;
     public float digTimeRate = 0.5f;
@@ -77,32 +73,8 @@ public class Player : MonoBehaviour {
 
         } else if (!this.walk.MoveNext()) {
             this.walk = null;
-            if (blockController.BlockAtPos(NextPos(Direction.Down)) == null) {
+            if (NextBlock(Direction.Down) == null) 
                 this.drop = GetDropEnumerator();
-            }
-        }
-
-        transform.position = blockController.ScreenPos(this.pos);
-    }
-
-    void LateUpdate() {
-        // Scroll
-        if (this.cameraFixed < this.pos.y) {
-            float cameraDiff = this.pos.y - this.cameraFixed;
-            transform.Translate(0, cameraDiff, 0);
-            foreach (GameObject block in
-                     GameObject.FindGameObjectsWithTag("Block")) {
-                block.transform.Translate(0, cameraDiff, 0);
-
-                // Debug
-                Block b = block.GetComponent<Block>();
-                Debug.DrawLine(
-                    block.transform.position,
-                    block.transform.position + new Vector3(-0.5f, -0.5f, 0),
-                    (b.unbalance ? Color.red : Color.green)
-                );
-
-            }
         }
     }
 
@@ -114,25 +86,7 @@ public class Player : MonoBehaviour {
     }
 
     Vector2 NextPos(Direction d) {
-        float x = this.pos.x;
-        float y = this.pos.y;
-
-        switch (d) {
-            case Direction.Left:
-                x -= 1;
-                break;
-            case Direction.Right:
-                x += 1;
-                break;
-            case Direction.Up:
-                y -= 1;
-                break;
-            case Direction.Down:
-                y += 1;
-                break;
-        }
-
-        return new Vector2(x, y);
+        return this.pos + blockController.Offset[d];
     }
 
     Block NextBlock(Direction d) {
