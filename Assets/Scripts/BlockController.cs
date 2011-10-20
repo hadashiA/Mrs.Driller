@@ -17,7 +17,7 @@ public class BlockController : MonoBehaviour {
     }
 
     Block[,] blocks;
-    List<Block> dropBlocks;
+    List<Block> unbalanceBlocks;
 
     public Vector2 ScreenPos(Vector2 pos) {
         return new Vector2(pos.x, -pos.y);
@@ -51,19 +51,19 @@ public class BlockController : MonoBehaviour {
                 UnFixed(member);
                 Destroy(member.gameObject);
 
-                //     if (row > 0) {
-                //         Block upBlock = this.blocks[row - 1, col];
-                //         if (upBlock != null) {
-                //             SetDropBlocks(upBlock);
-                //         }
-                //     }
+                if (row > 0) {
+                    Block upBlock = this.blocks[row - 1, col];
+                    if (upBlock != null) {
+                        SetUnbalanceBlocks(upBlock);
+                    }
+                }
             }
         }
     }
 
     void Awake() {
         this.blocks = new Block[this.numBlockRows, this.numBlockCols];
-        this.dropBlocks = new List<Block>();
+        this.unbalanceBlocks = new List<Block>();
 
         // random test data setting
         for (int row = 5; row < this.numBlockRows; row++) {
@@ -96,29 +96,31 @@ public class BlockController : MonoBehaviour {
     }
 
     void Update() {
-        foreach (Block dropBlock in this.dropBlocks) {
-            if (!dropBlock.shaking) {
-                UnFixed(dropBlock);
+        foreach (Block block in this.unbalanceBlocks) {
+            if (!block.shaking) {
+                UnFixed(block);
             }
 
-            Block downBlock = BlockAtPos(dropBlock.pos.x, dropBlock.pos.y + 1);
+            Block downBlock = BlockAtPos(block.pos.x, block.pos.y + 1);
             if (downBlock != null) {
-                dropBlock.pos.y = downBlock.pos.y - 1;
-                dropBlock.DropEnd();
-                Fixed(dropBlock);
+                block.pos.y = downBlock.pos.y - 1;
+                Fixed(block);
             }
         }
 
-        this.dropBlocks.RemoveAll(delegate(Block block) { return block.dropEnded; });
+        this.unbalanceBlocks.RemoveAll(
+            delegate(Block block) { return !block.unbalance; }
+        );
     }
     
     void Fixed(Block block) {
         int col = Mathf.FloorToInt(block.pos.x);
         int row = Mathf.FloorToInt(block.pos.y);
 
-        if (this.blocks[row, col] == null) {
-            this.blocks[row, col] = block;
-        }
+        block.DropEnd();
+        this.blocks[row, col] = block;
+        BlockGroup group = new BlockGroup();
+        Grouping(group, block);
     }
 
     void UnFixed(Block block) {
@@ -126,20 +128,21 @@ public class BlockController : MonoBehaviour {
         int row = Mathf.FloorToInt(block.pos.y);
 
         this.blocks[row, col] = null;
+        block.DropStart();
     }
 
-    void SetDropBlocks(Block block) {
-        if (block.dropStarted) return;
+    void SetUnbalanceBlocks(Block block) {
+        if (block.unbalance) return;
 
-        this.dropBlocks.Add(block);
-        block.DropStart();
+        this.unbalanceBlocks.Add(block);
+        block.ShakeStart();
 
         int col = Mathf.FloorToInt(block.pos.x);
         int row = Mathf.FloorToInt(block.pos.y);
 
         if (row > 0) {
             Block upBlock = this.blocks[row - 1, col];
-            if (upBlock != null) SetDropBlocks(upBlock);
+            if (upBlock != null) SetUnbalanceBlocks(upBlock);
         }
     }
 

@@ -39,12 +39,12 @@ public class Block : MonoBehaviour {
         get { return this.shake != null;  }
     }
 
-    public bool dropStarted {
-        get { return this.shaking || this.drop != null; }
+    public bool dropping {
+        get { return this.drop != null; }
     }
 
-    public bool dropEnded {
-        get { return !this.dropStarted; }
+    public bool unbalance {
+        get { return this.shaking || this.dropping; }
     }
 
     IEnumerator drop;
@@ -56,8 +56,12 @@ public class Block : MonoBehaviour {
         return "color:" + this.color + " pos:" + pos;
     }
 
-    public void DropStart() {
+    public void ShakeStart() {
         this.shake = GetShakeEnumerator();
+    }
+
+    public void DropStart() {
+        this.drop = GetDropEnumerator();
     }
 
     public void DropEnd() {
@@ -74,7 +78,6 @@ public class Block : MonoBehaviour {
     void Update() {
         if (this.shake != null && !this.shake.MoveNext()) {
             this.shake = null;
-            this.drop = GetDropEnumerator();
         } else if (this.drop != null) {
             this.drop.MoveNext();
         }
