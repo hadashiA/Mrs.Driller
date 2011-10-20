@@ -82,7 +82,7 @@ public class Player : MonoBehaviour {
         blockController.RemoveAtPos(
             this.pos + BlockController.Offset[this.direction]
         );
-
+        
         if (this.direction == Direction.Down) {
             this.drop = GetDropEnumerator();
         }
