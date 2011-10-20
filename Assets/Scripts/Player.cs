@@ -134,7 +134,6 @@ public class Player : MonoBehaviour {
 
         while (downBlock == null) {
             float gravityPerFrame = blockController.gravity * Time.deltaTime;
-            
             this.pos.y += gravityPerFrame;
             
             downBlock = blockController.NextBlock(this.pos, Direction.Down);

@@ -160,7 +160,8 @@ public class BlockController : MonoBehaviour {
         // Scroll
         if (this.cameraFixed < playerBehaviour.pos.y) {
             float cameraDiff = playerBehaviour.pos.y - this.cameraFixed;
-            transform.Translate(0, cameraDiff, 0);
+
+            player.transform.Translate(0, cameraDiff, 0);
             foreach (GameObject blockObj in
                      GameObject.FindGameObjectsWithTag("Block")) {
 
@@ -183,12 +184,12 @@ public class BlockController : MonoBehaviour {
         return new Vector2(pos.x, -pos.y);
     }
 
-    int Row(float x) {
-        return Mathf.FloorToInt(x);
+    int Row(float y) {
+        return Mathf.FloorToInt(y);
     }
 
-    int Col(float y) {
-        return Mathf.FloorToInt(y);
+    int Col(float x) {
+        return Mathf.FloorToInt(x);
     }
 
     void Fixed(Block block) {
