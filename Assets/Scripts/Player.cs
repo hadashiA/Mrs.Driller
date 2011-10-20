@@ -18,13 +18,14 @@ public class Player : MonoBehaviour {
     Direction _direction;
     Direction direction {
         get { return this._direction; }
+        // Debug
         set {
             this._direction = value;
             Block nextBlock = blockController.BlockAtPos(NextPos(value));
             if (nextBlock != null) {
                 foreach (Block b in nextBlock.group) {
                     Debug.DrawLine(transform.position, b.transform.position,
-                                   Color.green);
+                                   Color.blue);
                 }
             }
         }
@@ -76,6 +77,9 @@ public class Player : MonoBehaviour {
 
         } else if (!this.walk.MoveNext()) {
             this.walk = null;
+            if (blockController.BlockAtPos(NextPos(Direction.Down)) == null) {
+                this.drop = GetDropEnumerator();
+            }
         }
 
         transform.position = blockController.ScreenPos(this.pos);
@@ -89,6 +93,15 @@ public class Player : MonoBehaviour {
             foreach (GameObject block in
                      GameObject.FindGameObjectsWithTag("Block")) {
                 block.transform.Translate(0, cameraDiff, 0);
+
+                // Debug
+                Block b = block.GetComponent<Block>();
+                Debug.DrawLine(
+                    block.transform.position,
+                    block.transform.position + new Vector3(-0.5f, -0.5f, 0),
+                    (b.unbalance ? Color.red : Color.green)
+                );
+
             }
         }
     }
