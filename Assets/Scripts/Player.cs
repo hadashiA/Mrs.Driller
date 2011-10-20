@@ -14,7 +14,22 @@ public class Player : MonoBehaviour {
 
     public float cameraFixed = 6.0f;
 
-    Direction direction;
+    // Direction direction;
+    Direction _direction;
+    Direction direction {
+        get { return this._direction; }
+        set {
+            this._direction = value;
+            Block nextBlock = blockController.BlockAtPos(NextPos(value));
+            if (nextBlock != null) {
+                foreach (Block b in nextBlock.group) {
+                    Debug.DrawLine(transform.position, b.transform.position,
+                                   Color.green);
+                }
+            }
+        }
+    }
+
     float nextDigTime = 0;
 
     BlockController blockController;

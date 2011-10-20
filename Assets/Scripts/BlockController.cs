@@ -44,8 +44,8 @@ public class BlockController : MonoBehaviour {
         if (block == null)  return;
         
         foreach (Block member in block.group) {
-            int col = Mathf.FloorToInt(pos.x);
-            int row = Mathf.FloorToInt(pos.y);
+            int col = Mathf.FloorToInt(member.pos.x);
+            int row = Mathf.FloorToInt(member.pos.y);
 
             if (this.blocks[row, col] != null) {
                 UnFixed(member);
@@ -61,8 +61,7 @@ public class BlockController : MonoBehaviour {
         }
     }
 
-    // Use this for initialization
-    void Start() {
+    void Awake() {
         this.blocks = new Block[this.numBlockRows, this.numBlockCols];
         this.dropBlocks = new List<Block>();
 
@@ -90,6 +89,10 @@ public class BlockController : MonoBehaviour {
                 }
             }
         }
+    }
+
+    // Use this for initialization
+    void Start() {
     }
 
     void Update() {
