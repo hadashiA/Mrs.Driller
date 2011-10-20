@@ -3,12 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 
 public enum Direction {
-    Left, Right, Down, Right
+    Left, Right, Down, Up
 }
 
 public class BlockController : MonoBehaviour {
     public float gravity = 5.0f;
-    public float cameraFixedY = -5.0f;
+
+    public float cameraFixed = 6.0f;
 
     public int numBlockRows = 100;
     public int numBlockCols = 15;
@@ -26,12 +27,12 @@ public class BlockController : MonoBehaviour {
     GameObject player;
 
     public static readonly Dictionary<Direction, Vector2> Offset =
-        new Dictionary<direction, Vector2>() {
+        new Dictionary<Direction, Vector2>() {
         { Direction.Left,  new Vector2(-1,  0) },
         { Direction.Right, new Vector2( 1,  0) },
-        { Direction.Up,    new Vector2( 0,  1) },
-        { Direction.Down,  new Vector2( 0, -1) },
-    }
+        { Direction.Up,    new Vector2( 0, -1) },
+        { Direction.Down,  new Vector2( 0,  1) }
+    };
 
     public Block BlockAtPos(Vector2 pos) {
         int col = Col(pos.x);
@@ -49,6 +50,10 @@ public class BlockController : MonoBehaviour {
         return BlockAtPos(new Vector2(x, y));
     }
 
+    public Block NextBlock(Vector2 pos, Direction d) {
+        return BlockAtPos(pos + BlockController.Offset[d]);
+    }
+
     public void RemoveAtPos(Vector2 pos) {
         Block block = BlockAtPos(pos);
         if (block == null)  return;
@@ -61,12 +66,9 @@ public class BlockController : MonoBehaviour {
                 UnFixed(member);
                 Destroy(member.gameObject);
 
-                if (row > 0) {
-                    Block upBlock = this.blocks[row - 1, col];
-                    if (upBlock != null) {
-                        SetUnbalanceBlocks(upBlock);
-                    }
-                }
+                Block upperBlock = NextBlock(block.pos, Direction.Up);
+                if (upperBlock != null)
+                    SetUnbalanceBlocks(upperBlock.group);
             }
         }
     }
@@ -88,14 +90,14 @@ public class BlockController : MonoBehaviour {
                 blockObj.renderer.material = this.blockMaterials[materialIndex];
                 
                 Block block = blockObj.GetComponent<Block>();
-                block.color = (Color)materialIndex;
+                block.color = (Block.Color)materialIndex;
                 block.pos   = pos;
 
                 this.blocks[row, col] = block;
 
                 if (block.group == null) {
-                    BlockGroup group = new BlockGroup();
-                    Grouping(group, block);
+                    BlockGroup group = new BlockGroup(this);
+                    group.Grouping(block);
                 }
             }
         }
@@ -112,29 +114,38 @@ public class BlockController : MonoBehaviour {
 
             if (!block.shaking) {
                 UnFixed(block);
+                block.DropStart(this.gravity);
             }
 
-            Block underBlock = BlockAtPos(block.pos + -Vector2.up);
+            Block underBlock = NextBlock(block.pos, Direction.Down);
             if (underBlock != null) {
                 Fixed(block);
                 continue;
             }
 
-            Block leftBlock = BlockAtPos(block.pos + -Vector2.right);
+            Block leftBlock = NextBlock(block.pos, Direction.Left);
             if (leftBlock != null) {
                 Fixed(block);
                 continue;
             }
 
-            Block rightBlock = BlockAtPos(block.pos + Vector2.right);
+            Block rightBlock = NextBlock(block.pos, Direction.Right);
             if (rightBlock != null) {
                 Fixed(block);
                 continue;
             }
         }
 
-        BlockGroup group = new BlockGroup();
-        group.Grouping(block);
+        foreach (Block block in this.unbalanceBlocks) {
+            if (!block.unbalance) {
+                foreach (Block member in block.group) {
+                    Fixed(member);
+                }
+
+                BlockGroup group = new BlockGroup(this);
+                group.Grouping(block);
+            }
+        }
 
         this.unbalanceBlocks.RemoveAll(
             delegate(Block block) { return !block.unbalance; }
@@ -143,24 +154,25 @@ public class BlockController : MonoBehaviour {
     
     // Update is called once per frame
     void LateUpdate() {
-        player.transform.position = ScreenPos(this.pos);
+        Player playerBehaviour = player.GetComponent<Player>();
+        player.transform.position = ScreenPos(playerBehaviour.pos);
 
         // Scroll
-        if (this.cameraFixed < this.pos.y) {
-            float cameraDiff = this.pos.y - this.cameraFixed;
+        if (this.cameraFixed < playerBehaviour.pos.y) {
+            float cameraDiff = playerBehaviour.pos.y - this.cameraFixed;
             transform.Translate(0, cameraDiff, 0);
-            foreach (GameObject block in
+            foreach (GameObject blockObj in
                      GameObject.FindGameObjectsWithTag("Block")) {
 
-                block.transform.position = blockController.ScreenPos(this.pos);
-                block.transform.Translate(0, cameraDiff, 0);
+                Block block = blockObj.GetComponent<Block>();
+                blockObj.transform.position = ScreenPos(block.pos);
+                blockObj.transform.Translate(0, cameraDiff, 0);
 
                 // Debug
-                Block b = block.GetComponent<Block>();
                 Debug.DrawLine(
-                    block.transform.position,
-                    block.transform.position + new Vector3(-0.5f, -0.5f, 0),
-                    (b.unbalance ? Color.red : Color.green)
+                    blockObj.transform.position,
+                    blockObj.transform.position + new Vector3(-0.5f, -0.5f, 0),
+                    (block.unbalance ? Color.red : Color.green)
                 );
 
             }
@@ -172,16 +184,16 @@ public class BlockController : MonoBehaviour {
     }
 
     int Row(float x) {
-        return FloorToInt(x);
+        return Mathf.FloorToInt(x);
     }
 
     int Col(float y) {
-        return FloorToInt(y);
+        return Mathf.FloorToInt(y);
     }
 
     void Fixed(Block block) {
-        int col = Mathf.FloorToInt(block.pos.x);
-        int row = Mathf.FloorToInt(block.pos.y);
+        int col = Col(block.pos.x);
+        int row = Row(block.pos.y);
 
         block.DropEnd();
         block.pos.y = row;
@@ -189,26 +201,26 @@ public class BlockController : MonoBehaviour {
     }
 
     void UnFixed(Block block) {
-        int col = Mathf.FloorToInt(block.pos.x);
-        int row = Mathf.FloorToInt(block.pos.y);
+        int col = Col(block.pos.x);
+        int row = Row(block.pos.y);
 
         this.blocks[row, col] = null;
-        block.DropStart();
+        block.DropStart(this.gravity);
     }
 
     void SetUnbalanceBlocks(BlockGroup group) {
         HashSet<BlockGroup> unbalanceGroups =
             BlockGroup.SearchUnbalanceGroups(group);
 
-        foreach (BlockGroup group in unbalanceGroups) {
-            foreach (Block block in group) {
-                this.unbalanceBlocks.Add(block);
-                block.ShakeStart();
+        foreach (BlockGroup g in unbalanceGroups) {
+            foreach (Block member in g) {
+                this.unbalanceBlocks.Add(member);
+                member.ShakeStart();
             }
         }
 
         this.unbalanceBlocks.Sort(delegate(Block a, Block b) {
-                return FloorToInt(b.pos.y - a.pos.y);
+                return Mathf.FloorToInt(b.pos.y - a.pos.y);
             });
     }
 }

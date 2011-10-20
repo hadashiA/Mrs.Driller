@@ -4,11 +4,11 @@ using System.Collections.Generic;
 
 public class Player : MonoBehaviour {
     public float walkSpeed = 3.0f;
+    public float walkToUpperWait = 0.5f;
+
     public float digTimeRate = 0.5f;
 
     public Vector2 pos = new Vector2(7, 0);
-
-    public float cameraFixed = 6.0f;
 
     // Direction direction;
     Direction _direction;
@@ -17,7 +17,7 @@ public class Player : MonoBehaviour {
         // Debug
         set {
             this._direction = value;
-            Block nextBlock = blockController.BlockAtPos(NextPos(value));
+            Block nextBlock = blockController.NextBlock(this.pos, this._direction);
             if (nextBlock != null) {
                 foreach (Block b in nextBlock.group) {
                     Debug.DrawLine(transform.position, b.transform.position,
@@ -73,31 +73,45 @@ public class Player : MonoBehaviour {
 
         } else if (!this.walk.MoveNext()) {
             this.walk = null;
-            if (NextBlock(Direction.Down) == null) 
+            if (blockController.NextBlock(this.pos, Direction.Down) == null) 
                 this.drop = GetDropEnumerator();
         }
     }
 
     void Dig() {
-        blockController.RemoveAtPos(NextPos(this.direction));
+        Debug.Log("Dig!!!!");
+
+        blockController.RemoveAtPos(
+            this.pos + BlockController.Offset[this.direction]
+        );
+
         if (this.direction == Direction.Down) {
             this.drop = GetDropEnumerator();
         }
     }
 
-    Vector2 NextPos(Direction d) {
-        return this.pos + blockController.Offset[d];
-    }
-
-    Block NextBlock(Direction d) {
-        return blockController.BlockAtPos(NextPos(d));
-    }
-
     IEnumerator GetWalkEnumerator(Direction d) {
         this.direction = d;
 
-        if ((d == Direction.Left && NextBlock(Direction.Left) != null) ||
-            (d == Direction.Right && NextBlock(Direction.Right) != null)) {
+        switch (d) {
+            case Direction.Left:
+                if (this.pos.x < 1) {
+                    yield break;
+                }
+                break;
+
+            case Direction.Right:
+                if (this.pos.x > blockController.numBlockCols - 2) {
+                    yield break;
+                }
+                break;
+
+            default:
+                yield break;
+        }
+
+        Block NextBlock = blockController.NextBlock(this.pos, d);
+        if (NextBlock != null) {
             yield break;
         }
 
@@ -116,20 +130,19 @@ public class Player : MonoBehaviour {
     }
 
     IEnumerator GetDropEnumerator() {
-        Block downBlock = NextBlock(Direction.Down);
+        Block downBlock = blockController.NextBlock(this.pos, Direction.Down);
 
         while (downBlock == null) {
             float gravityPerFrame = blockController.gravity * Time.deltaTime;
-            float nextFoot = this.pos.y + gravityPerFrame + 1;
             
-            downBlock =
-                blockController.BlockAtPos(new Vector2(this.pos.x, nextFoot));
+            this.pos.y += gravityPerFrame;
+            
+            downBlock = blockController.NextBlock(this.pos, Direction.Down);
             if (downBlock != null) {
                 this.pos.y = downBlock.pos.y - 1;
                 yield break;
             }
 
-            this.pos.y += gravityPerFrame;
             yield return true;
         }
     }

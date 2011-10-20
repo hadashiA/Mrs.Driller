@@ -1,10 +1,7 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-
-public enum Color {
-    Blue = 0, Green, Pink, Yellow
-}
 
 public class BlockGroup {
     HashSet<Block> blocks;
@@ -31,12 +28,12 @@ public class BlockGroup {
         this.blocks = new HashSet<Block>();
     }
 
-    public Grouping(Block block) {
+    public void Grouping(Block block) {
         if (!Add(block)) return;
 
         // 上下左右
         foreach (Direction d in Enum.GetValues(typeof(Direction))) {
-            Block nextBlock = NextBlock(d);
+            Block nextBlock = blockController.NextBlock(block.pos, d);
                 
             if (nextBlock != null && nextBlock.color == block.color) 
                 Grouping(nextBlock);
@@ -56,6 +53,10 @@ public class BlockGroup {
 }
 
 public class Block : MonoBehaviour {
+    public enum Color {
+        Blue = 0, Green, Pink, Yellow
+    }
+
     public Color color;
 
     public BlockGroup group;
@@ -87,8 +88,8 @@ public class Block : MonoBehaviour {
         this.shake = GetShakeEnumerator();
     }
 
-    public void DropStart() {
-        this.drop = GetDropEnumerator();
+    public void DropStart(float gravity) {
+        this.drop = GetDropEnumerator(gravity);
     }
 
     public void DropEnd() {
@@ -103,10 +104,6 @@ public class Block : MonoBehaviour {
         }
     }
     
-    Block NextBlock(Direction d) {
-        return blockController.BlockAtPos(this.pos + blockController.Offset[d]);
-    }
-
     IEnumerator GetShakeEnumerator() {
         float beforeShake = Time.time;
         float beforeX = pos.x;
