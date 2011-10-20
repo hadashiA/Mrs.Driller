@@ -108,9 +108,19 @@ public class Player : MonoBehaviour {
                 yield break;
         }
 
-        Block NextBlock = blockController.NextBlock(this.pos, d);
-        if (NextBlock != null) {
-            yield break;
+        Block nextBlock = blockController.NextBlock(this.pos, d);
+        if (nextBlock != null) {
+            // いちだんうえにあがれるか
+            if (blockController.NextBlock(nextBlock.pos, Direction.Up) == null) {
+                float beforeWait = Time.time;
+                while (Time.time - beforeWait < this.walkToUpperWait) {
+                    yield return true;
+                }
+                this.pos.y -= 1;
+                
+            } else {
+                yield break;
+            }
         }
 
         float walkFrom = this.pos.x;
