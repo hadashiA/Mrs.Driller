@@ -4,13 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class BlockGroup {
-    static int nextId = 0;
-
-    int _id;
-    public int id {
-        get { return this._id; }
-    }
-
     public int Count {
         get { return this.blocks.Count; }
     }
@@ -28,7 +21,6 @@ public class BlockGroup {
     IEnumerator blink;
 
     public BlockGroup(BlockController blockController) {
-        this._id = ++nextId;
         this.blockController = blockController;
         this.blocks = new HashSet<Block>();
     }
@@ -143,17 +135,32 @@ public class BlockGroup {
 }
 
 public class Block : MonoBehaviour {
-    public enum Color {
-        Blue = 0, Green, Pink, Yellow
+    public Material[] blockMaterials;
+
+    public float shakeTime = 0.5f;
+
+    public BlockData data {
+        set {
+            this.color = value.color;
+            this.group = value.group;
+            this.shake = value.shake;
+        }
     }
-
-    public Color color;
-
-    public BlockGroup group;
 
     public Vector2 pos;
 
-    public float shakeTime = 0.5f;
+    public BlockGroup group;
+
+    BlockColor _color;
+    public BlockColor color {
+        get {
+            return this._color;
+        }
+        set {
+            this._color = value;
+            renderer.material = this.blockMaterials[(int)this._color];
+        }
+    }
 
     public bool shaking {
         get { return this.shake != null;  }
@@ -167,8 +174,8 @@ public class Block : MonoBehaviour {
         get { return this.shaking || this.dropping; }
     }
 
-    IEnumerator drop;
     IEnumerator shake;
+    IEnumerator drop;
 
     public override string ToString() {
         return "color:" + this.color + " pos:" + pos;

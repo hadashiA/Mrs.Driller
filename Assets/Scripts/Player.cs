@@ -7,26 +7,12 @@ public class Player : MonoBehaviour {
     public float walkToUpperWait = 0.5f;
 
     public float digTimeRate = 0.5f;
-
+    
     public Vector2 pos = new Vector2(7, 0);
 
     // Direction direction;
-    Direction _direction;
-    Direction direction {
-        get { return this._direction; }
-        // Debug
-        set {
-            this._direction = value;
-            Block nextBlock = blockController.NextBlock(this.pos, this._direction);
-            if (nextBlock != null) {
-                foreach (Block b in nextBlock.group) {
-                    Debug.DrawLine(transform.position, b.transform.position,
-                                   Color.blue);
-                }
-            }
-        }
-    }
-
+    Direction direction;
+    
     float nextDigTime = 0;
 
     BlockController blockController;
@@ -52,10 +38,9 @@ public class Player : MonoBehaviour {
     // Update is called once per frame
     void Update() {
         // Drop
-        if (this.drop != null && !this.drop.MoveNext()) {
+        if (this.drop != null && !this.drop.MoveNext()) 
             this.drop = null;
-        }
-
+        
         // Dig
         if (Input.GetButton("Fire1") && Time.time > nextDigTime) {
             nextDigTime = Time.time + this.digTimeRate;
@@ -66,7 +51,7 @@ public class Player : MonoBehaviour {
         // Walk
         if (this.walk != null && !this.walk.MoveNext()) {
             this.walk = null;
-            if (blockController.NextBlock(this.pos, Direction.Down) == null) 
+            if (!blockController.Collision(this.pos, Direction.Down)) 
                 DropStart();
         }
 
@@ -123,11 +108,13 @@ public class Player : MonoBehaviour {
         if (this.drop != null) 
             offset.y += 1;
         
-        Block nextBlock = blockController.NextBlock(this.pos + offset, d);
-        if (nextBlock != null) {
+        if (!blockController.Collision(this.pos + offset, d)) {
             // いちだんうえにあがれるか
-            if (blockController.NextBlock(nextBlock.pos, Direction.Up) == null &&
-                blockController.NextBlock(this.pos, Direction.Up) == null) {
+            if (!blockController.Collision(this.pos + offset, Direction.Up) &&
+                !blockController.Collision(
+                    this.pos + offset + blockController.Offset[d], Direction.Up
+                )) {
+
                 float beforeWait = Time.time;
                 while (Time.time - beforeWait < this.walkToUpperWait) {
                     if (!walkButtonOn) yield break;
@@ -155,19 +142,15 @@ public class Player : MonoBehaviour {
     }
 
     IEnumerator GetDropEnumerator() {
-        Block downBlock = blockController.NextBlock(this.pos, Direction.Down);
-
-        while (downBlock == null) {
+        while (!blockController.Collision(this.pos, Direction.Down)) {
             float gravityPerFrame = blockController.gravity * Time.deltaTime;
             this.pos.y += gravityPerFrame;
-            
-            downBlock = blockController.NextBlock(this.pos, Direction.Down);
-            if (downBlock != null) {
-                this.pos.y = downBlock.pos.y - 1;
-                yield break;
-            }
+
+            if (blockController.Collision(this.pos, Direction.Down)) 
+                break;
 
             yield return true;
         }
+        this.pos.y = downBlock.pos.y - 1;
     }
 }
