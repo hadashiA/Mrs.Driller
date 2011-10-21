@@ -4,11 +4,21 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class BlockGroup {
+    public int Count {
+        get { return this.blocks.Count; }
+    }
+
     public bool unbalance = false;
+
+    public bool blinking {
+        get { return this.blink != null; }
+    }
 
     HashSet<Block> blocks;
 
     BlockController blockController;
+
+    IEnumerator blink;
 
     public BlockGroup(BlockController blockController) {
         this.blockController = blockController;
@@ -25,6 +35,10 @@ public class BlockGroup {
             if (nextBlock != null && nextBlock.color == block.color) 
                 Grouping(nextBlock);
         }
+    }
+
+    public void BlinkStart() {
+        this.blink = GetBlinkEnumerator();
     }
 
     public HashSet<BlockGroup> SearchUpperGroups() {
@@ -98,6 +112,26 @@ public class BlockGroup {
             SearchUnbalanceGroupsRecursive(result, history, upperBlock);
         }
     }
+
+    IEnumerator GetBlinkEnumerator() {
+        float beforeBlink = Time.time;
+
+        while (Time.time - beforeBlink < blockController.blinkTime) {
+            float alpha = Mathf.Sin(Time.time * 100.0f);
+            foreach (Block member in this.blocks) {
+                Color color = member.renderer.material.color;
+                color.a = alpha;
+                member.renderer.material.color = color;
+            }
+            yield return true;
+        }
+
+        foreach (Block member in this.blocks) {
+            Color color = member.renderer.material.color;
+            color.a = 0;
+            member.renderer.material.color = color;
+        }
+    }
 }
 
 public class Block : MonoBehaviour {
@@ -156,18 +190,11 @@ public class Block : MonoBehaviour {
         float beforeShake = Time.time;
         float beforeX = pos.x;
 
-        while (true) {
-            float total = Time.time - beforeShake;
-
-            if (total > this.shakeTime) {
-                pos.x = beforeX;
-                yield break;
-            } else {
-                Debug.Log(Time.time);
-                pos.x += Mathf.Sin(Time.time * 50.0f) / 30.0f;
-                yield return true;
-            }
+        while (Time.time - beforeShake < this.shakeTime) {
+            pos.x += Mathf.Sin(Time.time * 50.0f) / 30.0f;
+            yield return true;
         }
+        pos.x = beforeX;
     }
 
     IEnumerator GetDropEnumerator(float gravity) {

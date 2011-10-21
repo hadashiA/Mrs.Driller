@@ -8,6 +8,7 @@ public enum Direction {
 
 public class BlockController : MonoBehaviour {
     public float gravity = 5.0f;
+    public float blinkTime = 0.75f;
 
     public float cameraFixed = 6.0f;
 
@@ -161,26 +162,27 @@ public class BlockController : MonoBehaviour {
         Player playerBehaviour = player.GetComponent<Player>();
         player.transform.position = ScreenPos(playerBehaviour.pos);
 
-        // Scroll
-        if (this.cameraFixed < playerBehaviour.pos.y) {
-            float cameraDiff = playerBehaviour.pos.y - this.cameraFixed;
-
+        float cameraDiff = playerBehaviour.pos.y - this.cameraFixed;
+        if (cameraDiff > 0) {
             player.transform.Translate(0, cameraDiff, 0);
-            foreach (GameObject blockObj in
-                     GameObject.FindGameObjectsWithTag("Block")) {
+        }
 
-                Block block = blockObj.GetComponent<Block>();
-                blockObj.transform.position = ScreenPos(block.pos);
+        foreach (GameObject blockObj in
+                 GameObject.FindGameObjectsWithTag("Block")) {
+            
+            Block block = blockObj.GetComponent<Block>();
+            blockObj.transform.position = ScreenPos(block.pos);
+            
+            if (cameraDiff > 0) {
                 blockObj.transform.Translate(0, cameraDiff, 0);
-
-                // Debug
-                Debug.DrawLine(
-                    blockObj.transform.position,
-                    blockObj.transform.position + new Vector3(-0.5f, -0.5f, 0),
-                    (block.unbalance ? Color.red : Color.green)
-                );
-
             }
+            
+            // Debug
+            Debug.DrawLine(
+                blockObj.transform.position,
+                blockObj.transform.position + new Vector3(-0.5f, -0.5f, 0),
+                (block.unbalance ? Color.red : Color.green)
+            );
         }
     }
 
