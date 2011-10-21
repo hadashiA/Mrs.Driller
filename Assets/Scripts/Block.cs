@@ -67,19 +67,19 @@ public class BlockGroup {
                                         BlockGroup group) {
         history.Add(group);
 
-        // // 自分が乗っかっているグループ調べる
-        // foreach (Block member in group.blocks) {
-        //     if (member.pos.y > blockController.numBlockRows - 2) continue;
+        // 自分が乗っかっているグループ調べる
+        foreach (Block member in group.blocks) {
+            if (member.pos.y > blockController.numBlockRows - 2) continue;
 
-        //     Block underBlock = blockController.NextBlock(member.pos, Direction.Down);
-        //     if (underBlock != null && underBlock.group != group) {
-        //         if (history.Contains(underBlock.group)) {
-        //             if (!underBlock.group.unbalance) return;
-        //         } else {
-        //             SearchUnbalanceGroupsRecursive(result, history, underBlock.group);
-        //         }
-        //     }
-        // }
+            Block underBlock = blockController.NextBlock(member.pos, Direction.Down);
+            if (underBlock != null && underBlock.group != group) {
+                if (history.Contains(underBlock.group)) {
+                    if (!underBlock.group.unbalance) return;
+                } else {
+                    SearchUnbalanceGroupsRecursive(result, history, underBlock.group);
+                }
+            }
+        }
 
         group.unbalance = true;
         result.Add(group);
