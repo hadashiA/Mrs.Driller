@@ -80,7 +80,8 @@ public class BlockGroup {
                         Block underUnderBlock = blockController.NextBlock(
                             underMember.pos, Direction.Down
                         );
-                        if (!history.Contains(underUnderBlock.group)) {
+                        if (underUnderBlock != null &&
+                            !history.Contains(underUnderBlock.group)) {
                             return;
                         }
                     }
@@ -157,13 +158,13 @@ public class Block : MonoBehaviour {
 
         while (true) {
             float total = Time.time - beforeShake;
-            float progress = total / this.shakeTime;
 
             if (total > this.shakeTime) {
                 pos.x = beforeX;
                 yield break;
             } else {
-                pos.x += 0.02f * (progress) * (progress > 0.5 ? -1 : 1);
+                Debug.Log(Time.time);
+                pos.x += Mathf.Sin(Time.time * 50.0f) / 30.0f;
                 yield return true;
             }
         }

@@ -59,8 +59,7 @@ public class BlockController : MonoBehaviour {
         if (block == null)  return;
         
         HashSet<BlockGroup> upperGroups = block.group.SearchUpperGroups();
-        Debug.Log(upperGroups.Count);
-
+        
         foreach (Block member in block.group) {
             UnFixed(member);
             Destroy(member.gameObject);
@@ -226,7 +225,5 @@ public class BlockController : MonoBehaviour {
         this.unbalanceBlocks.Sort(delegate(Block a, Block b) {
                 return Mathf.FloorToInt(b.pos.y - a.pos.y);
             });
-
-        Debug.Log(this.unbalanceBlocks.Count);
     }
 }
