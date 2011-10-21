@@ -76,6 +76,14 @@ public class BlockGroup {
                 if (history.Contains(underBlock.group)) {
                     if (!underBlock.group.unbalance) return;
                 } else {
+                    foreach (Block underMember in underBlock.group) {
+                        Block underUnderBlock = blockController.NextBlock(
+                            underMember.pos, Direction.Down
+                        );
+                        if (!history.Contains(underUnderBlock.group)) {
+                            return;
+                        }
+                    }
                     SearchUnbalanceGroupsRecursive(result, history, underBlock.group);
                 }
             }
@@ -85,9 +93,9 @@ public class BlockGroup {
         result.Add(group);
 
         // // 自分に乗っているグループ調べる
-        // foreach (BlockGroup upperBlock in group.SearchUpperGroups()) {
-        //     SearchUnbalanceGroupsRecursive(result, history, upperBlock);
-        // }
+        foreach (BlockGroup upperBlock in group.SearchUpperGroups()) {
+            SearchUnbalanceGroupsRecursive(result, history, upperBlock);
+        }
     }
 }
 
