@@ -26,6 +26,7 @@ public class BlockController : MonoBehaviour {
     List<Block> unbalanceBlocks;
 
     GameObject player;
+    Player playerBehaviour;
 
     public static readonly Dictionary<Direction, Vector2> Offset =
         new Dictionary<Direction, Vector2>() {
@@ -109,47 +110,52 @@ public class BlockController : MonoBehaviour {
     // Use this for initialization
     void Start() {
         this.player = GameObject.Find("Player");
+        this.playerBehaviour = player.GetComponent<Player>();
     }
 
     void Update() {
+        HashSet<BlockGroup> fixedGroups = new HashSet<BlockGroup>();
+
         foreach (Block block in this.unbalanceBlocks) {
             block.MoveNext();
-
+            
             if (!block.shaking) {
                 UnFixed(block);
                 block.DropStart(this.gravity);
+                playerBehaviour.DropStart();
             }
 
             Block underBlock = NextBlock(block.pos, Direction.Down);
-            if (underBlock != null) {
-                Fixed(block);
+            if (underBlock != null && underBlock.group != block.group && !underBlock.dropping) {
+                fixedGroups.Add(block.group);
                 continue;
             }
 
             Block leftBlock = NextBlock(block.pos, Direction.Left);
             if (leftBlock != null && leftBlock.color == block.color &&
                 leftBlock.group != block.group) {
-                Fixed(block);
+                fixedGroups.Add(block.group);
                 continue;
             }
 
             Block rightBlock = NextBlock(block.pos, Direction.Right);
             if (rightBlock != null && rightBlock.color == block.color &&
                 rightBlock.group != block.group) {
-                Fixed(block);
+                fixedGroups.Add(block.group);
                 continue;
             }
         }
 
-        foreach (Block block in this.unbalanceBlocks) {
-            if (!block.unbalance) {
-                foreach (Block member in block.group) {
-                    Fixed(member);
-                }
-
-                BlockGroup group = new BlockGroup(this);
-                group.Grouping(block);
+        Block firstMember = null;
+        foreach (BlockGroup group in fixedGroups) {
+            foreach (Block member in group) {
+                if (firstMember == null)
+                    firstMember = member;
+                Fixed(member);
             }
+            
+            BlockGroup reGroup = new BlockGroup(this);
+            reGroup.Grouping(firstMember);
         }
 
         this.unbalanceBlocks.RemoveAll(
@@ -171,6 +177,13 @@ public class BlockController : MonoBehaviour {
                  GameObject.FindGameObjectsWithTag("Block")) {
             
             Block block = blockObj.GetComponent<Block>();
+
+            // if (block.dropping != false) {
+            //     int col = Col(block.pos.x);
+            //     int row = Row(block.pos.y);
+            //     this.blocks[row, col] = block;
+            // }
+
             blockObj.transform.position = ScreenPos(block.pos);
             
             if (cameraDiff > 0) {
@@ -225,7 +238,8 @@ public class BlockController : MonoBehaviour {
         }
 
         this.unbalanceBlocks.Sort(delegate(Block a, Block b) {
-                return Mathf.FloorToInt(b.pos.y - a.pos.y);
+                // return Mathf.FloorToInt(b.pos.y - a.pos.y);
+                return (a.pos.y < b.pos.y ? 1 : -1);
             });
     }
 }

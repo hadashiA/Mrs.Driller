@@ -36,13 +36,17 @@ public class Player : MonoBehaviour {
 
     bool walkButtonOn = false;
 
+    public void DropStart() {
+        this.drop = GetDropEnumerator();
+    }
+
     // Use this for initialization
     void Start() {
         GameObject game = GameObject.Find("Game");
         this.blockController = game.GetComponent<BlockController>();
 
         this.direction = Direction.Down;
-        this.drop = GetDropEnumerator();
+        DropStart();
     }
     
     // Update is called once per frame
@@ -63,7 +67,7 @@ public class Player : MonoBehaviour {
         if (this.walk != null && !this.walk.MoveNext()) {
             this.walk = null;
             if (blockController.NextBlock(this.pos, Direction.Down) == null) 
-                this.drop = GetDropEnumerator();
+                DropStart();
         }
 
         this.walkButtonOn = false;
@@ -91,7 +95,7 @@ public class Player : MonoBehaviour {
         );
         
         if (this.direction == Direction.Down) {
-            this.drop = GetDropEnumerator();
+            DropStart();
         }
     }
 
@@ -122,7 +126,8 @@ public class Player : MonoBehaviour {
         Block nextBlock = blockController.NextBlock(this.pos + offset, d);
         if (nextBlock != null) {
             // いちだんうえにあがれるか
-            if (blockController.NextBlock(nextBlock.pos, Direction.Up) == null) {
+            if (blockController.NextBlock(nextBlock.pos, Direction.Up) == null &&
+                blockController.NextBlock(this.pos, Direction.Up) == null) {
                 float beforeWait = Time.time;
                 while (Time.time - beforeWait < this.walkToUpperWait) {
                     if (!walkButtonOn) yield break;

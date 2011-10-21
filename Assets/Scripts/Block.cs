@@ -4,6 +4,13 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class BlockGroup {
+    static int nextId = 0;
+
+    int _id;
+    public int id {
+        get { return this._id; }
+    }
+
     public int Count {
         get { return this.blocks.Count; }
     }
@@ -21,6 +28,7 @@ public class BlockGroup {
     IEnumerator blink;
 
     public BlockGroup(BlockController blockController) {
+        this._id = ++nextId;
         this.blockController = blockController;
         this.blocks = new HashSet<Block>();
     }
