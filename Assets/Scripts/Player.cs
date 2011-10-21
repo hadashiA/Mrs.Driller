@@ -55,6 +55,7 @@ public class Player : MonoBehaviour {
         // Dig
         if (Input.GetButton("Fire1") && Time.time > nextDigTime) {
             nextDigTime = Time.time + this.digTimeRate;
+            this.walkButtonOn = false;
             Dig();
         }
         

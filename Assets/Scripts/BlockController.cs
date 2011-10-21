@@ -59,6 +59,7 @@ public class BlockController : MonoBehaviour {
         if (block == null)  return;
         
         HashSet<BlockGroup> upperGroups = block.group.SearchUpperGroups();
+        Debug.Log(upperGroups.Count);
 
         foreach (Block member in block.group) {
             UnFixed(member);
@@ -115,7 +116,6 @@ public class BlockController : MonoBehaviour {
             block.MoveNext();
 
             if (!block.shaking) {
-                Debug.Log("Unfixed!!:" + block);
                 UnFixed(block);
                 block.DropStart(this.gravity);
             }

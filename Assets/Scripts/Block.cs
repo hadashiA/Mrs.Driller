@@ -31,6 +31,8 @@ public class BlockGroup {
         HashSet<BlockGroup> result = new HashSet<BlockGroup>();
 
         foreach (Block member in this.blocks) {
+            if (member.pos.y < 1) continue;
+
             Block upperBlock = blockController.NextBlock(member.pos, Direction.Up);
             if (upperBlock != null && upperBlock.group != this) {
                 result.Add(upperBlock.group);
@@ -65,25 +67,27 @@ public class BlockGroup {
                                         BlockGroup group) {
         history.Add(group);
 
-        // 自分が乗っかっているグループ調べる
-        foreach (Block member in group.blocks) {
-            Block underBlock = blockController.NextBlock(member.pos, Direction.Down);
-            if (underBlock != null && underBlock.group != group) {
-                if (history.Contains(underBlock.group)) {
-                    if (!underBlock.group.unbalance) return;
-                } else {
-                    SearchUnbalanceGroupsRecursive(result, history, underBlock.group);
-                }
-            }
-        }
+        // // 自分が乗っかっているグループ調べる
+        // foreach (Block member in group.blocks) {
+        //     if (member.pos.y > blockController.numBlockRows - 2) continue;
+
+        //     Block underBlock = blockController.NextBlock(member.pos, Direction.Down);
+        //     if (underBlock != null && underBlock.group != group) {
+        //         if (history.Contains(underBlock.group)) {
+        //             if (!underBlock.group.unbalance) return;
+        //         } else {
+        //             SearchUnbalanceGroupsRecursive(result, history, underBlock.group);
+        //         }
+        //     }
+        // }
 
         group.unbalance = true;
         result.Add(group);
 
-        // 自分に乗っているグループ調べる
-        foreach (BlockGroup upperBlock in group.SearchUpperGroups()) {
-            SearchUnbalanceGroupsRecursive(result, history, upperBlock);
-        }
+        // // 自分に乗っているグループ調べる
+        // foreach (BlockGroup upperBlock in group.SearchUpperGroups()) {
+        //     SearchUnbalanceGroupsRecursive(result, history, upperBlock);
+        // }
     }
 }
 
