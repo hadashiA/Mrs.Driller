@@ -143,7 +143,6 @@ public class Block : MonoBehaviour {
         set {
             this.color = value.color;
             this.group = value.group;
-            this.shake = value.shake;
         }
     }
 

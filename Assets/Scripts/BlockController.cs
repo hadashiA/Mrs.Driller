@@ -14,7 +14,6 @@ public struct BlockData {
     public bool exists;
     public BlockColor color;
     public BlockGroup group;
-    public IEnumerator shake;
 }
 
 public class BlockController : MonoBehaviour {
