@@ -192,11 +192,21 @@ public class Block : MonoBehaviour {
         this.drop = null;
     }
 
-    public void MoveNext() {
+    public bool ShakeNext() {
         if (this.shake != null && !this.shake.MoveNext()) {
             this.shake = null;
-        } else if (this.drop != null) {
-            this.drop.MoveNext();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public bool DropNext() {
+        Debug.Log("DropNext!:" + this);
+        if (this.drop != null) {
+            return this.drop.MoveNext();
+        } else {
+            return false;
         }
     }
     
@@ -215,6 +225,7 @@ public class Block : MonoBehaviour {
         while (true) {
             float gravityPerFrame = gravity * Time.deltaTime;
             this.pos.y += gravityPerFrame;
-            yield return true;}
+            yield return true;
+        }
     }
 } 
