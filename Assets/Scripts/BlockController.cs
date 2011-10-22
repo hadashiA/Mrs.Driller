@@ -6,15 +6,9 @@ public enum Direction {
     Left, Right, Down, Up
 }
 
-enum BlockType {
-    Empty,
-    Blue, Green, Pink, Yellow,
-}
-
 public class BlockController : MonoBehaviour {
-    Vector2 FRAME_OUT = new Vector2(-100, -100);
-
     public float gravity = 5.0f;
+    public float shakeTime = 0.5f;
 
     public float blinkTime = 0.75f;
 
@@ -24,17 +18,17 @@ public class BlockController : MonoBehaviour {
     public int numBlockCols = 15;
 
     public GameObject blockPrefab;
-    public Material[] blockMaterials;
     
     public float blockSize {
         get { return this.blockPrefab.transform.localScale.x; }
     }
 
-    BlockType[,] hitTable;
+    Block.Type[,] hitTable;
+    Block[,] fixedBlocks;
     List<Block> unbalanceBlocks;
-    List<Block> fixedBlocks;
 
-    GameObject player;
+    GameObject playerObj;
+    Player player;
 
     public static readonly Dictionary<Direction, Vector2> Offset =
         new Dictionary<Direction, Vector2>() {
@@ -44,113 +38,134 @@ public class BlockController : MonoBehaviour {
         { Direction.Down,  new Vector2( 0,  1) }
     };
 
-    public Block BlockAtPos(Vector2 pos) {
-        int col = Col(pos.x);
-        int row = Row(pos.y);
-
-        BlockData data = this.fixedBlockData[row, col];
-        if (data.exists) {
-            Block block = this.fixedBlocksBuffer[this.nextFixedBlocksBufferIndex];
-            block.data = (BlockData)data;
-            block.pos = new Vector2(col, row);
-
-            this.nextFixedBlocksBufferIndex =
-                (this.nextFixedBlocksBufferIndex + 1) % this.fixedBlocksBuffer.Count;
-
-            return block;
-
-        } else {
-            return null;
-        }
-    }
-
-    public Block NextBlock(Vector2 pos, Direction direction) {
-        return BlockAtPos(pos + Offset[direction]);
-    }
-
-    public bool Collision(Vector2 pos, Direction? direction = null) {
+    public Block.Type Collision(Vector2 pos, Direction? direction = null) {
         if (direction != null) 
             pos += Offset[(Direction)direction];
 
         int row = Row(pos.y);
-        int col = Row(pos.x);
-
-        return CollisionAtIndex(row, col);
+        int col = Col(pos.x);
+        if (row == -1 || col == -1) {
+            return Block.Type.Empty;
+        } else {
+            return this.hitTable[row, col];
+        }
     }
 
-    public bool Collision(float x, float y) {
-        return Collision(new Vector2(x, y));
+    public Block BlockAtPos(Vector2 pos) {
+        Block.Type type = Collision(pos);
+        if (type == Block.Type.Empty) {
+            return null;
+        } else {
+            int row = Row(pos.y);
+            int col = Col(pos.x);
+            Block block = this.fixedBlocks[row, col];
+            block.type = type;
+            block.pos = new Vector2(row, col);
+            return block;
+        }
+    }
+
+    public Block NextBlock(Vector2 pos, Direction direction) {
+        pos += Offset[direction];
+        return BlockAtPos(pos);
     }
 
     public void RemoveAtPos(Vector2 pos) {
-        int col = Col(pos.x);
-        int row = Row(pos.y);
+        if (Collision(pos) == Block.Type.Empty) return;
 
-        RemoveAtIndex(row, col);
+        int row = Row(pos.y);
+        int col = Col(pos.x);
+        if (row == -1 || col == -1) return;
+
+        Block block = this.fixedBlocks[row, col];
+        Block.Group group = block.group;
+
+        foreach (Block member in group) {
+            row = Row(member.pos.y);
+            col = Col(member.pos.x);
+            if (row == -1 || col == -1) continue;
+
+            UnFixed(row, col);
+            member.type = Block.Type.Empty;
+        }
+
+        foreach (Block.Group upperGroup in group.LookUpUpperGroups()) {
+            SetUnbalanceGroups(upperGroup);
+        }
     }
 
     void Awake() {
         int numBlocks = this.numBlockRows * this.numBlockCols;
-        
-        this.fixedBlocksBuffer = new List<Block>(numBlocks);
-        this.unbalanceBlocks   = new List<Block>(numBlocks / 2);
 
-        this.fixedBlockData = new BlockData[this.numBlockRows, this.numBlockCols];
+        this.hitTable = new Block.Type[this.numBlockRows, this.numBlockCols];
+        this.fixedBlocks = new Block[this.numBlockRows, this.numBlockCols];
+        this.unbalanceBlocks = new List<Block>(numBlocks / 2);
+
+        int typesCount = System.Enum.GetValues(typeof(Block.Type)).Length;
 
         // random test data setting
-        for (int row = 5; row < this.numBlockRows; row++) {
+        for (int row = 0; row < this.numBlockRows; row++) {
             for (int col = 0; col < this.numBlockCols; col++) {
-                int colorCount = System.Enum.GetValues(typeof(BlockColor)).Length;
-                int colorIndex = Random.Range(0, colorCount);
+                Block.Type type;
+                if (row > 5) {
+                    type = (Block.Type)Random.Range(0, typesCount);
+                } else {
+                    type = Block.Type.Empty;
+                }
 
-                BlockData data = new BlockData();
-                data.color = (BlockColor)colorIndex;
+                this.hitTable[row, col] = type;
 
-                this.fixedBlockData[row, col] = data;
-                
-                GameObject blockObj = Instantiate(
-                    this.blockPrefab, FRAME_OUT, Quaternion.identity
-                ) as GameObject;
-                
-                Block block = blockObj.GetComponent<Block>();
-                block.data = data;
-                this.fixedBlocksBuffer.Add(block);
+                if (type != Block.Type.Empty) {
+                    GameObject blockObj = Instantiate(
+                        this.blockPrefab, Vector2.zero, Quaternion.identity
+                    ) as GameObject;
+                    
+                    Block block = blockObj.GetComponent<Block>();
+                    block.pos = new Vector2(col, row);
+                    block.type = type;
+                    this.fixedBlocks[row, col] = block;
+                }
+            }
+        }
+
+        // Grouping all
+        for (int row = 0; row < this.numBlockRows; row++) {
+            for (int col = 0; col < this.numBlockCols; col++) {
+                if (this.hitTable[row, col] == Block.Type.Empty) continue;
+
+                Block block = this.fixedBlocks[row, col];
+                if (block.group != null) continue;
+
+                Block.Group group = new Block.Group(this);
+                group.Grouping(block);
             }
         }
     }
 
     // Use this for initialization
     void Start() {
-        this.player = GameObject.Find("Player");
+        this.playerObj = GameObject.Find("Player");
+        this.player = playerObj.GetComponent<Player>();
     }
 
     void Update() {
-        this.nextFixedBlocksBufferIndex = 0;
-
-        foreach (Block fixedBlock in this.fixedBlocksBuffer) {
-            fixedBlock.transform.position = FRAME_OUT;
-        }
-
-        for (int row = 0; row < this.numBlockRows; row++) {
-            for (int col = 0; col < this.numBlockCols; col++) {
-                BlockData data = this.fixedBlockData[row, col];
-                if (!data.exists) continue;
-
-                Block block = this.fixedBlocksBuffer[row * col];
-                block.data = data;
-                block.pos  = new Vector2(col, row);
-            }
-        }
+        // check
+        // for (int row = 0; row < this.numBlockRows; row++) {
+        //     for (int col = 0; col < this.numBlockCols; col++) {
+        //         Block.Type type = this.hitTable[row, col];
+        //         Block block = this.fixedBlocks[row, col];
+                
+        //     }
+        // }
     }
     
     // Update is called once per frame
     void LateUpdate() {
-        Player playerBehaviour = player.GetComponent<Player>();
-        player.transform.position = ScreenPos(playerBehaviour.pos);
+        playerObj.transform.position = ScreenPos(player.pos);
 
-        float cameraDiff = playerBehaviour.pos.y - this.cameraFixed;
+        float cameraDiff = player.pos.y - this.cameraFixed;
         if (cameraDiff > 0) {
-            player.transform.Translate(0, cameraDiff, 0);
+            playerObj.transform.Translate(0, cameraDiff, 0);
         }
 
         foreach (GameObject blockObj in
@@ -166,90 +181,53 @@ public class BlockController : MonoBehaviour {
         }
     }
 
-    bool CollisionAtIndex(int row, int col) {
-        return this.fixedBlockData[row, col].exists;
-    }
-
-    void RemoveAtIndex(int row, int col) {
-        BlockData blockData = this.fixedBlockData[row, col];
-        if (!blockData.exists) return;
-
-        this.fixedBlockData[row, col].exists = false;;
-
-        // 上下左右同じ色一緒に消す
-        for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
-            for (int colOffset = -1; colOffset < colOffset; colOffset++) {
-                if ((rowOffset != 0 && colOffset != 0) ||
-                    (rowOffset == 0 && colOffset == 0)) continue;
-                
-                int nextRow = row + rowOffset;
-                int nextCol = col + colOffset;
-
-                BlockData nextBlockData = this.fixedBlockData[nextRow, nextCol];
-                if (nextBlockData.exists && nextBlockData.color == blockData.color) {
-                    RemoveAtIndex(nextRow, nextCol);
-                }
-            }
-        }
-    }
-
     Vector2 ScreenPos(Vector2 pos) {
         return new Vector2(pos.x, -pos.y);
     }
 
     int Row(float y) {
-        return Mathf.FloorToInt(y);
+        int row = Mathf.FloorToInt(y);
+        if (row < 0 || row > this.numBlockRows - 1) {
+            return -1;
+        } else {
+            return row;
+        }
     }
 
     int Col(float x) {
-        return Mathf.FloorToInt(x);
-    }
-
-    void Fixed(Block block) {
-        int col = Col(block.pos.x);
-        int row = Row(block.pos.y);
-
-        block.DropEnd();
-        block.pos.y = row;
-
-        this.unbalanceBlocks.Remove(block);
-        this.fixedBlocksBuffer.Add(block);
-
-        BlockData data = this.fixedBlockData[row, col];
-        data.color = block.color;
-        data.group = block.group;
-        data.shake = null;
+        int col = Mathf.FloorToInt(x);
+        if (col < 0 || col > this.numBlockCols - 1) {
+            return -1;
+        } else {
+            return col;
+        }
     }
 
     void UnFixed(int row, int col) {
-        BlockData data = this.unfixedBlockData[row, col];
-        Block block = this.unfixedBlocksBuffer[0];
-        block.data = data;
+        this.hitTable[row, col] = Block.Type.Empty;
 
-        this.fixedBlocksBuffer.RemoveAt(0);
-        this.unbalanceBlocks.Add(block);
-
-        BlockGroup group = new BlockGroup(this);
-        group.Grouping(block);
-
-        foreach (Block member in group) {
-            member.DropStart(this.gravity);
-        }
-
-        this.fixedBlockData[row, col] = null;
+        Block block = this.fixedBlocks[row, col];
+        block.pos = new Vector2(col, row);
+        this.fixedBlocks[row, col] = null;
+        block.DropStart(this.gravity);
     }
 
-    void SetUnbalanceBlocks(BlockGroup group) {
-        HashSet<BlockGroup> unbalanceGroups = group.SearchUnbalanceGroups();
-        foreach (BlockGroup g in unbalanceGroups) {
+    void Fixed(int row, int col, Block block) {
+        this.hitTable[row, col] = block.type;
+        block.pos = new Vector2(col, row);
+        block.DropEnd();
+    }
+
+    void SetUnbalanceGroups(Block.Group group) {
+        HashSet<Block.Group> unbalanceGroups = group.LookUpUnbalanceGroups();
+        foreach (Block.Group g in unbalanceGroups) {
             foreach (Block member in g) {
                 this.unbalanceBlocks.Add(member);
-                member.ShakeStart();
+                member.ShakeStart(this.shakeTime);
             }
         }
 
         this.unbalanceBlocks.Sort(delegate(Block a, Block b) {
-                // return Mathf.FloorToInt(b.pos.y - a.pos.y);
                 return (a.pos.y < b.pos.y ? 1 : -1);
             });
     }

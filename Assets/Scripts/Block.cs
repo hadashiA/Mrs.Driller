@@ -1,161 +1,163 @@
 using UnityEngine;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 
-public class BlockGroup {
-    public int Count {
-        get { return this.blocks.Count; }
+public class Block : MonoBehaviour {
+    public enum Type {
+        Blue = 0, Green, Pink, Yellow,
+        // Air, Hard,
+        Empty
     }
 
-    public bool unbalance = false;
-
-    public bool blinking {
-        get { return this.blink != null; }
-    }
-
-    HashSet<Block> blocks;
-
-    BlockController blockController;
-
-    IEnumerator blink;
-
-    public BlockGroup(BlockController blockController) {
-        this.blockController = blockController;
-        this.blocks = new HashSet<Block>();
-    }
-
-    public void Grouping(Block block) {
-        if (!Add(block)) return;
-
-        // 上下左右
-        foreach (Direction d in Enum.GetValues(typeof(Direction))) {
-            Block nextBlock = blockController.NextBlock(block.pos, d);
-                
-            if (nextBlock != null && nextBlock.color == block.color) 
-                Grouping(nextBlock);
-        }
-    }
-
-    public void BlinkStart() {
-        this.blink = GetBlinkEnumerator();
-    }
-
-    public HashSet<BlockGroup> SearchUpperGroups() {
-        HashSet<BlockGroup> result = new HashSet<BlockGroup>();
-
-        foreach (Block member in this.blocks) {
-            if (member.pos.y < 1) continue;
-
-            Block upperBlock = blockController.NextBlock(member.pos, Direction.Up);
-            if (upperBlock != null && upperBlock.group != this) {
-                result.Add(upperBlock.group);
-            }
+    public class Group {
+        public int Count {
+            get { return this.blocks.Count; }
         }
 
-        return result;
-    }
+        public bool unbalance = false;
 
-    public HashSet<BlockGroup> SearchUnbalanceGroups() {
-        HashSet<BlockGroup> result  = new HashSet<BlockGroup>();
-        HashSet<BlockGroup> history = new HashSet<BlockGroup>();
-
-        SearchUnbalanceGroupsRecursive(result, history, this);
-
-        return result;
-    }
-
-    public IEnumerator<Block> GetEnumerator() {
-        foreach (Block block in this.blocks) {
-            yield return block;
+        public bool blinking {
+            get { return this.blink != null; }
         }
-    }
 
-    bool Add(Block block) {
-        block.group = this;
-        return blocks.Add(block);
-    }
+        HashSet<Block> blocks;
 
-    void SearchUnbalanceGroupsRecursive(HashSet<BlockGroup> result,
-                                        HashSet<BlockGroup> history,
-                                        BlockGroup group) {
-        history.Add(group);
+        BlockController blockController;
 
-        // 自分が乗っかっているグループ調べる
-        foreach (Block member in group.blocks) {
-            if (member.pos.y > blockController.numBlockRows - 2) continue;
+        IEnumerator blink;
 
-            Block underBlock = blockController.NextBlock(member.pos, Direction.Down);
-            if (underBlock != null && underBlock.group != group) {
-                if (history.Contains(underBlock.group)) {
-                    if (!underBlock.group.unbalance) return;
-                } else {
-                    foreach (Block underMember in underBlock.group) {
-                        Block underUnderBlock = blockController.NextBlock(
-                            underMember.pos, Direction.Down
-                        );
-                        if (underUnderBlock != null &&
-                            !history.Contains(underUnderBlock.group)) {
-                            return;
-                        }
-                    }
-                    SearchUnbalanceGroupsRecursive(result, history, underBlock.group);
+        public Group(BlockController blockController) {
+            this.blockController = blockController;
+            this.blocks = new HashSet<Block>();
+        }
+
+        public void Grouping(Block block) {
+            if (!Add(block)) return;
+
+            // 上下左右
+            foreach (Direction d in System.Enum.GetValues(typeof(Direction))) {
+                if (blockController.Collision(block.pos, d) == block.type) {
+                    Grouping(blockController.NextBlock(block.pos, d));
                 }
             }
         }
 
-        group.unbalance = true;
-        result.Add(group);
-
-        // // 自分に乗っているグループ調べる
-        foreach (BlockGroup upperBlock in group.SearchUpperGroups()) {
-            SearchUnbalanceGroupsRecursive(result, history, upperBlock);
+        public void BlinkStart() {
+            this.blink = GetBlinkEnumerator();
         }
-    }
 
-    IEnumerator GetBlinkEnumerator() {
-        float beforeBlink = Time.time;
+        public HashSet<Group> LookUpUpperGroups() {
+            HashSet<Group> result = new HashSet<Group>();
 
-        while (Time.time - beforeBlink < blockController.blinkTime) {
-            float alpha = Mathf.Sin(Time.time * 100.0f);
+            foreach (Block member in this.blocks) {
+                if (member.pos.y < 1) continue;
+
+                Block upperBlock = blockController.NextBlock(member.pos, Direction.Up);
+                if (upperBlock != null && upperBlock.group != this) {
+                    result.Add(upperBlock.group);
+                }
+            }
+
+            return result;
+        }
+
+        public HashSet<Group> LookUpUnbalanceGroups() {
+            HashSet<Group> result  = new HashSet<Group>();
+            HashSet<Group> history = new HashSet<Group>();
+
+            LookUpUnbalanceGroupsRecursive(result, history, this);
+
+            return result;
+        }
+
+        public IEnumerator<Block> GetEnumerator() {
+            foreach (Block block in this.blocks) {
+                yield return block;
+            }
+        }
+
+        bool Add(Block block) {
+            block.group = this;
+            return blocks.Add(block);
+        }
+
+        void LookUpUnbalanceGroupsRecursive(HashSet<Group> result,
+                                            HashSet<Group> history,
+                                            Group group) {
+            history.Add(group);
+
+            // 自分が乗っかっているグループ調べる
+            foreach (Block member in group.blocks) {
+                if (member.pos.y > blockController.numBlockRows - 2) continue;
+
+                Block underBlock = blockController.NextBlock(member.pos, Direction.Down);
+                if (underBlock != null && underBlock.group != group) {
+                    if (history.Contains(underBlock.group)) {
+                        if (!underBlock.group.unbalance) return;
+                    } else {
+                        foreach (Block underMember in underBlock.group) {
+                            Block underUnderBlock = blockController.NextBlock(
+                                underMember.pos, Direction.Down
+                            );
+                            if (underUnderBlock != null &&
+                                !history.Contains(underUnderBlock.group)) {
+                                return;
+                            }
+                        }
+                        LookUpUnbalanceGroupsRecursive(result, history, underBlock.group);
+                    }
+                }
+            }
+
+            group.unbalance = true;
+            result.Add(group);
+
+            // // 自分に乗っているグループ調べる
+            foreach (Group upperBlock in group.LookUpUpperGroups()) {
+                LookUpUnbalanceGroupsRecursive(result, history, upperBlock);
+            }
+        }
+
+        IEnumerator GetBlinkEnumerator() {
+            float beforeBlink = Time.time;
+
+            while (Time.time - beforeBlink < blockController.blinkTime) {
+                float alpha = Mathf.Sin(Time.time * 100.0f);
+                foreach (Block member in this.blocks) {
+                    Color color = member.renderer.material.color;
+                    color.a = alpha;
+                    member.renderer.material.color = color;
+                }
+                yield return true;
+            }
+
             foreach (Block member in this.blocks) {
                 Color color = member.renderer.material.color;
-                color.a = alpha;
+                color.a = 0;
                 member.renderer.material.color = color;
             }
-            yield return true;
-        }
-
-        foreach (Block member in this.blocks) {
-            Color color = member.renderer.material.color;
-            color.a = 0;
-            member.renderer.material.color = color;
         }
     }
-}
 
-public class Block : MonoBehaviour {
-    public float shakeTime = 0.5f;
-
-    public BlockData data {
-        set {
-            this.color = value.color;
-            this.group = value.group;
-        }
-    }
+    public Material[] blockMaterials;
 
     public Vector2 pos;
+    public Group group;
 
-    public BlockGroup group;
-
-    BlockColor _color;
-    public BlockColor color {
+    Type _type;
+    public Type type {
         get {
-            return this._color;
+            return this._type;
         }
+
         set {
-            this._color = value;
-            renderer.material = this.blockMaterials[(int)this._color];
+            this._type = value;
+            if (value == Type.Empty) {
+                renderer.enabled = false;
+            } else {
+                renderer.enabled = true;
+                renderer.material = this.blockMaterials[(int)value];
+            }
         }
     }
 
@@ -175,11 +177,11 @@ public class Block : MonoBehaviour {
     IEnumerator drop;
 
     public override string ToString() {
-        return "color:" + this.color + " pos:" + pos;
+        return "type:" + this.type + " pos:" + pos;
     }
 
-    public void ShakeStart() {
-        this.shake = GetShakeEnumerator();
+    public void ShakeStart(float shakeTime) {
+        this.shake = GetShakeEnumerator(shakeTime);
     }
 
     public void DropStart(float gravity) {
@@ -198,11 +200,11 @@ public class Block : MonoBehaviour {
         }
     }
     
-    IEnumerator GetShakeEnumerator() {
+    IEnumerator GetShakeEnumerator(float shakeTime) {
         float beforeShake = Time.time;
         float beforeX = pos.x;
 
-        while (Time.time - beforeShake < this.shakeTime) {
+        while (Time.time - beforeShake < shakeTime) {
             pos.x += Mathf.Sin(Time.time * 50.0f) / 30.0f;
             yield return true;
         }
@@ -213,7 +215,6 @@ public class Block : MonoBehaviour {
         while (true) {
             float gravityPerFrame = gravity * Time.deltaTime;
             this.pos.y += gravityPerFrame;
-            yield return true;
-        }
+            yield return true;}
     }
-}
+} 

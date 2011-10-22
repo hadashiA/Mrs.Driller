@@ -1,8 +1,8 @@
 .DS_Store
 Temp
 Library/ScriptAssemblies
-Library/cache
+Library/cache/*
 Library/assetDatabase*
-Library/previews
-Library/metadata
+Library/previews/*
+Library/metadata/*
 Library/guidmapper
