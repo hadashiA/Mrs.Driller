@@ -8,6 +8,8 @@ public enum Direction {
 
 public class BlockController : MonoBehaviour {
     public float gravity = 5.0f;
+    public float shakeTime = 0.5f;
+
     public float blinkTime = 0.75f;
 
     public float cameraFixed = 6.0f;
@@ -16,17 +18,17 @@ public class BlockController : MonoBehaviour {
     public int numBlockCols = 15;
 
     public GameObject blockPrefab;
-    public Material[] blockMaterials;
-
+    
     public float blockSize {
         get { return this.blockPrefab.transform.localScale.x; }
     }
 
-    Block[,] blocks;
+    public Block.Type[,] hitTable;
+    Block[,] fixedBlocks;
     List<Block> unbalanceBlocks;
 
-    GameObject player;
-    Player playerBehaviour;
+    GameObject playerObj;
+    Player player;
 
     public static readonly Dictionary<Direction, Vector2> Offset =
         new Dictionary<Direction, Vector2>() {
@@ -36,72 +38,86 @@ public class BlockController : MonoBehaviour {
         { Direction.Down,  new Vector2( 0,  1) }
     };
 
-    public Block BlockAtPos(Vector2 pos) {
-        int col = Col(pos.x);
-        int row = Row(pos.y);
+    public Block.Type Collision(Vector2 pos, Direction? direction = null) {
+        if (direction != null) 
+            pos += Offset[(Direction)direction];
 
-        if (col < 0 || col >= this.numBlockCols ||
-            row < 0 || row >= this.numBlockRows) {
-            return null;
+        int row = Row(pos.y);
+        int col = Col(pos.x);
+        if (row == -1 || col == -1) {
+            return Block.Type.Empty;
         } else {
-            return this.blocks[row, col];
+            return this.hitTable[row, col];
         }
     }
 
-    public Block BlockAtPos(float x, float y) {
-        return BlockAtPos(new Vector2(x, y));
+    public Block BlockAtPos(Vector2 pos) {
+        Block.Type type = Collision(pos);
+        if (type == Block.Type.Empty) {
+            return null;
+        } else {
+            int row = Row(pos.y);
+            int col = Col(pos.x);
+            Block block = this.fixedBlocks[row, col];
+            block.type = type;
+            return block;
+        }
     }
 
-    public Block NextBlock(Vector2 pos, Direction d) {
-        return BlockAtPos(pos + BlockController.Offset[d]);
+    public Block NextBlock(Vector2 pos, Direction direction) {
+        pos += Offset[direction];
+        return BlockAtPos(pos);
     }
 
     public void RemoveAtPos(Vector2 pos) {
+        if (Collision(pos) == Block.Type.Empty) return;
+
         Block block = BlockAtPos(pos);
-        if (block == null)  return;
-        
-        HashSet<BlockGroup> upperGroups = block.group.SearchUpperGroups();
-        
-        foreach (Block member in block.group) {
+        Block.Group group = block.group;
+
+        foreach (Block member in group) {
             UnFixed(member);
-            Destroy(member.gameObject);
+            // Destroy(member);
+            member.type = Block.Type.Empty;
         }
 
-        foreach (BlockGroup upperGroup in upperGroups) {
-            SetUnbalanceBlocks(upperGroup);
+        foreach (Block.Group upperGroup in group.LookUpUpperGroups()) {
+            SetUnbalanceGroups(upperGroup);
         }
     }
 
     void Awake() {
-        this.blocks = new Block[this.numBlockRows, this.numBlockCols];
-        this.unbalanceBlocks = new List<Block>();
+        int numBlocks = this.numBlockRows * this.numBlockCols;
+
+        this.hitTable = new Block.Type[this.numBlockRows, this.numBlockCols];
+        this.fixedBlocks = new Block[this.numBlockRows, this.numBlockCols];
+        this.unbalanceBlocks = new List<Block>(numBlocks / 2);
+
+        int typesCount = System.Enum.GetValues(typeof(Block.Type)).Length;
 
         // random test data setting
         for (int row = 0; row < this.numBlockRows; row++) {
             for (int col = 0; col < this.numBlockCols; col++) {
-                if (row < 5) {
-                    this.blocks[row, col] = null;
-                    continue;
+                Block.Type type;
+                if (row > 5) {
+                    type = (Block.Type)Random.Range(0, typesCount - 1);
+                } else {
+                    type = Block.Type.Empty;
                 }
 
-                Vector2 pos = new Vector2(col, row);
+                this.hitTable[row, col] = type;
 
-                GameObject blockObj = Instantiate(
-                    this.blockPrefab, ScreenPos(pos), Quaternion.identity
-                ) as GameObject;
+                if (type != Block.Type.Empty) {
+                    Vector2 pos = new Vector2(col, row);
 
-                int materialIndex = Random.Range(0, this.blockMaterials.Length);
-                blockObj.renderer.material = this.blockMaterials[materialIndex];
-                
-                Block block = blockObj.GetComponent<Block>();
-                block.color = (Block.Color)materialIndex;
-                block.pos   = pos;
-
-                this.blocks[row, col] = block;
-
-                if (block.group == null) {
-                    BlockGroup group = new BlockGroup(this);
-                    group.Grouping(block);
+                    GameObject blockObj = Instantiate(
+                        this.blockPrefab, ScreenPos(pos), Quaternion.identity
+                    ) as GameObject;
+                    
+                    Block block = blockObj.GetComponent<Block>();
+                    block.pos = pos;
+                    block.type = type;
+                    this.fixedBlocks[row, col] = block;
                 }
             }
         }
@@ -109,93 +125,80 @@ public class BlockController : MonoBehaviour {
 
     // Use this for initialization
     void Start() {
-        this.player = GameObject.Find("Player");
-        this.playerBehaviour = player.GetComponent<Player>();
+        // Grouping all
+        for (int row = 0; row < this.numBlockRows; row++) {
+            for (int col = 0; col < this.numBlockCols; col++) {
+                if (this.hitTable[row, col] == Block.Type.Empty) continue;
+
+                Block block = this.fixedBlocks[row, col];
+                if (block.group != null) continue;
+
+                Block.Group group = new Block.Group(this);
+                group.Grouping(block);
+            }
+        }
+
+        this.playerObj = GameObject.Find("Player");
+        this.player = playerObj.GetComponent<Player>();
     }
 
     void Update() {
-        HashSet<BlockGroup> fixedGroups = new HashSet<BlockGroup>();
+        // check
+        // for (int row = 0; row < this.numBlockRows; row++) {
+        //     for (int col = 0; col < this.numBlockCols; col++) {
+        //         Block.Type type = this.hitTable[row, col];
+        //         Block block = this.fixedBlocks[row, col];
+                
+        //     }
+        // }
 
         foreach (Block block in this.unbalanceBlocks) {
-            block.MoveNext();
-            
-            if (!block.shaking) {
+            if (!block.unbalance) continue;
+
+            if (block.shaking && !block.ShakeNext()) {
                 UnFixed(block);
-                block.DropStart(this.gravity);
-                playerBehaviour.DropStart();
-            }
 
-            Block underBlock = NextBlock(block.pos, Direction.Down);
-            if (underBlock != null && underBlock.group != block.group && !underBlock.dropping) {
-                fixedGroups.Add(block.group);
-                continue;
-            }
+            } else if (block.dropping) {
+                block.DropNext();
 
-            Block leftBlock = NextBlock(block.pos, Direction.Left);
-            if (leftBlock != null && leftBlock.color == block.color &&
-                leftBlock.group != block.group) {
-                fixedGroups.Add(block.group);
-                continue;
-            }
+                if (Collision(block.pos, Direction.Down) != Block.Type.Empty ||
+                    Collision(block.pos, Direction.Left) == block.type ||
+                    Collision(block.pos, Direction.Right) == block.type) {
 
-            Block rightBlock = NextBlock(block.pos, Direction.Right);
-            if (rightBlock != null && rightBlock.color == block.color &&
-                rightBlock.group != block.group) {
-                fixedGroups.Add(block.group);
-                continue;
+                    foreach (Block member in block.group) {
+                        Fixed(member);
+                    }
+
+                    Block.Group reGroup = new Block.Group(this);
+                    reGroup.Grouping(block);
+                }
             }
         }
 
-        Block firstMember = null;
-        foreach (BlockGroup group in fixedGroups) {
-            foreach (Block member in group) {
-                if (firstMember == null)
-                    firstMember = member;
-                Fixed(member);
-            }
-            
-            BlockGroup reGroup = new BlockGroup(this);
-            reGroup.Grouping(firstMember);
-        }
-
-        this.unbalanceBlocks.RemoveAll(
-            delegate(Block block) { return !block.unbalance; }
-        );
+        this.unbalanceBlocks.RemoveAll(delegate(Block block) {
+                return !block.unbalance;
+            });
     }
     
     // Update is called once per frame
     void LateUpdate() {
-        Player playerBehaviour = player.GetComponent<Player>();
-        player.transform.position = ScreenPos(playerBehaviour.pos);
+        playerObj.transform.position = ScreenPos(player.pos);
 
-        float cameraDiff = playerBehaviour.pos.y - this.cameraFixed;
+        float cameraDiff = player.pos.y - this.cameraFixed;
         if (cameraDiff > 0) {
-            player.transform.Translate(0, cameraDiff, 0);
+            playerObj.transform.Translate(0, cameraDiff, 0);
         }
 
         foreach (GameObject blockObj in
                  GameObject.FindGameObjectsWithTag("Block")) {
             
             Block block = blockObj.GetComponent<Block>();
-
-            // if (block.dropping != false) {
-            //     int col = Col(block.pos.x);
-            //     int row = Row(block.pos.y);
-            //     this.blocks[row, col] = block;
-            // }
-
+            
             blockObj.transform.position = ScreenPos(block.pos);
             
             if (cameraDiff > 0) {
                 blockObj.transform.Translate(0, cameraDiff, 0);
             }
-            
-            // Debug
-            Debug.DrawLine(
-                blockObj.transform.position,
-                blockObj.transform.position + new Vector3(-0.5f, -0.5f, 0),
-                (block.unbalance ? Color.red : Color.green)
-            );
         }
     }
 
@@ -204,41 +207,54 @@ public class BlockController : MonoBehaviour {
     }
 
     int Row(float y) {
-        return Mathf.FloorToInt(y);
+        int row = Mathf.FloorToInt(y);
+        if (row < 0 || row > this.numBlockRows - 1) {
+            return -1;
+        } else {
+            return row;
+        }
     }
 
     int Col(float x) {
-        return Mathf.FloorToInt(x);
-    }
-
-    void Fixed(Block block) {
-        int col = Col(block.pos.x);
-        int row = Row(block.pos.y);
-
-        block.DropEnd();
-        block.pos.y = row;
-        this.blocks[row, col] = block;
+        int col = Mathf.FloorToInt(x);
+        if (col < 0 || col > this.numBlockCols - 1) {
+            return -1;
+        } else {
+            return col;
+        }
     }
 
     void UnFixed(Block block) {
-        int col = Col(block.pos.x);
         int row = Row(block.pos.y);
+        int col = Col(block.pos.x);
+        if (row == -1 || col == -1) return;
 
-        this.blocks[row, col] = null;
+        this.hitTable[row, col] = Block.Type.Empty;
+
+        this.fixedBlocks[row, col] = null;
         block.DropStart(this.gravity);
     }
+    
+    void Fixed(Block block) {
+        int row = Row(block.pos.y);
+        int col = Col(block.pos.x);
+        if (row == -1 || col == -1) return;
 
-    void SetUnbalanceBlocks(BlockGroup group) {
-        HashSet<BlockGroup> unbalanceGroups = group.SearchUnbalanceGroups();
-        foreach (BlockGroup g in unbalanceGroups) {
+        this.hitTable[row, col] = block.type;
+        block.pos = new Vector2(col, row);
+        block.DropEnd();
+    }
+
+    void SetUnbalanceGroups(Block.Group group) {
+        HashSet<Block.Group> unbalanceGroups = group.LookUpUnbalanceGroups();
+        foreach (Block.Group g in unbalanceGroups) {
             foreach (Block member in g) {
                 this.unbalanceBlocks.Add(member);
-                member.ShakeStart();
+                member.ShakeStart(this.shakeTime);
             }
         }
 
         this.unbalanceBlocks.Sort(delegate(Block a, Block b) {
-                // return Mathf.FloorToInt(b.pos.y - a.pos.y);
                 return (a.pos.y < b.pos.y ? 1 : -1);
             });
     }
