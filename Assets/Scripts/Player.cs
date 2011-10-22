@@ -92,12 +92,15 @@ public class Player : MonoBehaviour {
     }
 
     void Dig() {
-        blockController.RemoveAtPos(
-            this.pos + BlockController.Offset[this.direction]
-        );
-        
-        if (this.direction == Direction.Down) {
-            DropStart();
+        Block.Type hit = blockController.Collision(this.pos, this.direction);
+        if (hit != Block.Type.Empty) {
+            blockController.RemoveAtPos(
+                this.pos + BlockController.Offset[this.direction]
+            );
+            
+            if (this.direction == Direction.Down) {
+                DropStart();
+            }
         }
     }
 

@@ -32,6 +32,8 @@ public class Block : MonoBehaviour {
         }
 
         public void Grouping(Block block) {
+            if (block == null || block.type == Block.Type.Empty) return;
+
             if (!Add(block)) return;
 
             // 上下左右
@@ -202,7 +204,6 @@ public class Block : MonoBehaviour {
     }
 
     public bool DropNext() {
-        Debug.Log("DropNext!:" + this);
         if (this.drop != null) {
             return this.drop.MoveNext();
         } else {

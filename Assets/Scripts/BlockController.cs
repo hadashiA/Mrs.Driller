@@ -59,7 +59,7 @@ public class BlockController : MonoBehaviour {
             int row = Row(pos.y);
             int col = Col(pos.x);
             Block block = this.fixedBlocks[row, col];
-            block.type = type;
+
             return block;
         }
     }
@@ -71,6 +71,8 @@ public class BlockController : MonoBehaviour {
 
     public void RemoveAtPos(Vector2 pos) {
         if (Collision(pos) == Block.Type.Empty) return;
+
+        Debug.Log("collision:" + Collision(pos) + " block:" + BlockAtPos(pos));
 
         Block block = BlockAtPos(pos);
         Block.Group group = block.group;
@@ -230,8 +232,8 @@ public class BlockController : MonoBehaviour {
         if (row == -1 || col == -1) return;
 
         this.hitTable[row, col] = Block.Type.Empty;
-
         this.fixedBlocks[row, col] = null;
+
         block.DropStart(this.gravity);
     }
     
@@ -241,6 +243,7 @@ public class BlockController : MonoBehaviour {
         if (row == -1 || col == -1) return;
 
         this.hitTable[row, col] = block.type;
+        this.fixedBlocks[row, col] = block;
         block.pos = new Vector2(col, row);
         block.DropEnd();
     }
