@@ -154,6 +154,8 @@ public class BlockController : MonoBehaviour {
         //     }
         // }
 
+        HashSet<Block.Group> fixedGroups = new HashSet<Block.Group>();
+
         foreach (Block block in this.unbalanceBlocks) {
             if (!block.unbalance) continue;
 
@@ -167,14 +169,20 @@ public class BlockController : MonoBehaviour {
                     Collision(block.pos, Direction.Left) == block.type ||
                     Collision(block.pos, Direction.Right) == block.type) {
 
-                    foreach (Block member in block.group) {
-                        Fixed(member);
-                    }
-
-                    Block.Group reGroup = new Block.Group(this);
-                    reGroup.Grouping(block);
+                    fixedGroups.Add(block.group);
                 }
             }
+        }
+
+        foreach (Block.Group fixedGroup in fixedGroups) {
+            Block firstMember = null;
+            foreach (Block member in fixedGroup) {
+                if (firstMember == null) firstMember = member;
+                Fixed(member);
+            }
+
+            Block.Group reGroup = new Block.Group(this);
+            reGroup.Grouping(firstMember);
         }
 
         this.unbalanceBlocks.RemoveAll(delegate(Block block) {
