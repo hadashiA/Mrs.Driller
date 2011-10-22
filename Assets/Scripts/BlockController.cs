@@ -79,8 +79,8 @@ public class BlockController : MonoBehaviour {
 
         foreach (Block member in group) {
             UnFixed(member);
-            // Destroy(member);
             member.type = Block.Type.Empty;
+            Destroy(member.gameObject);
         }
 
         foreach (Block.Group upperGroup in group.LookUpUpperGroups()) {
@@ -150,7 +150,7 @@ public class BlockController : MonoBehaviour {
         //     for (int col = 0; col < this.numBlockCols; col++) {
         //         Block.Type type = this.hitTable[row, col];
         //         Block block = this.fixedBlocks[row, col];
-                
+        //         block.type = type;
         //     }
         // }
 
