@@ -23,7 +23,7 @@ public class BlockController : MonoBehaviour {
         get { return this.blockPrefab.transform.localScale.x; }
     }
 
-    Block.Type[,] hitTable;
+    public Block.Type[,] hitTable;
     Block[,] fixedBlocks;
     List<Block> unbalanceBlocks;
 
@@ -60,7 +60,7 @@ public class BlockController : MonoBehaviour {
             int col = Col(pos.x);
             Block block = this.fixedBlocks[row, col];
             block.type = type;
-            block.pos = new Vector2(row, col);
+            block.pos = new Vector2(col, row);
             return block;
         }
     }
@@ -73,16 +73,12 @@ public class BlockController : MonoBehaviour {
     public void RemoveAtPos(Vector2 pos) {
         if (Collision(pos) == Block.Type.Empty) return;
 
-        int row = Row(pos.y);
-        int col = Col(pos.x);
-        if (row == -1 || col == -1) return;
-
-        Block block = this.fixedBlocks[row, col];
+        Block block = BlockAtPos(pos);
         Block.Group group = block.group;
 
         foreach (Block member in group) {
-            row = Row(member.pos.y);
-            col = Col(member.pos.x);
+            int row = Row(member.pos.y);
+            int col = Col(member.pos.x);
             if (row == -1 || col == -1) continue;
 
             UnFixed(row, col);
@@ -116,18 +112,23 @@ public class BlockController : MonoBehaviour {
                 this.hitTable[row, col] = type;
 
                 if (type != Block.Type.Empty) {
+                    Vector2 pos = new Vector2(col, row);
+
                     GameObject blockObj = Instantiate(
-                        this.blockPrefab, Vector2.zero, Quaternion.identity
+                        this.blockPrefab, ScreenPos(pos), Quaternion.identity
                     ) as GameObject;
                     
                     Block block = blockObj.GetComponent<Block>();
-                    block.pos = new Vector2(col, row);
+                    block.pos = pos;
                     block.type = type;
                     this.fixedBlocks[row, col] = block;
                 }
             }
         }
+    }
 
+    // Use this for initialization
+    void Start() {
         // Grouping all
         for (int row = 0; row < this.numBlockRows; row++) {
             for (int col = 0; col < this.numBlockCols; col++) {
@@ -140,10 +141,7 @@ public class BlockController : MonoBehaviour {
                 group.Grouping(block);
             }
         }
-    }
 
-    // Use this for initialization
-    void Start() {
         this.playerObj = GameObject.Find("Player");
         this.player = playerObj.GetComponent<Player>();
     }
@@ -211,7 +209,7 @@ public class BlockController : MonoBehaviour {
         this.fixedBlocks[row, col] = null;
         block.DropStart(this.gravity);
     }
-
+    
     void Fixed(int row, int col, Block block) {
         this.hitTable[row, col] = block.type;
         block.pos = new Vector2(col, row);

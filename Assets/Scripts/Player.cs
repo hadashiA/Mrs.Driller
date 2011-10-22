@@ -126,7 +126,7 @@ public class Player : MonoBehaviour {
             offset.y += 1;
         
         Block.Type hit = blockController.Collision(this.pos + offset, d);
-        if (hit == Block.Type.Empty) {
+        if (hit != Block.Type.Empty) {
             // いちだんうえにあがれるか
             Block.Type upperHit = blockController.Collision(
                 this.pos + offset, Direction.Up
