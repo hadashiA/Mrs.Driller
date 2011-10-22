@@ -6,14 +6,9 @@ public enum Direction {
     Left, Right, Down, Up
 }
 
-public enum BlockColor {
-    Blue = 0, Green, Pink, Yellow
-}
-
-public struct BlockData {
-    public bool exists;
-    public BlockColor color;
-    public BlockGroup group;
+enum BlockType {
+    Empty,
+    Blue, Green, Pink, Yellow,
 }
 
 public class BlockController : MonoBehaviour {
@@ -29,16 +24,15 @@ public class BlockController : MonoBehaviour {
     public int numBlockCols = 15;
 
     public GameObject blockPrefab;
+    public Material[] blockMaterials;
     
     public float blockSize {
         get { return this.blockPrefab.transform.localScale.x; }
     }
 
-    BlockData[,] fixedBlockData;
-
+    BlockType[,] hitTable;
     List<Block> unbalanceBlocks;
-    List<Block> fixedBlocksBuffer;
-    int nextFixedBlocksBufferIndex = 0;
+    List<Block> fixedBlocks;
 
     GameObject player;
 

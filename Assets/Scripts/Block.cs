@@ -135,8 +135,6 @@ public class BlockGroup {
 }
 
 public class Block : MonoBehaviour {
-    public Material[] blockMaterials;
-
     public float shakeTime = 0.5f;
 
     public BlockData data {
