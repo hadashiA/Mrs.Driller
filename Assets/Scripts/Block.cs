@@ -142,9 +142,9 @@ public class Block : MonoBehaviour {
             this._type = value;
             if (value == Type.Empty) {
                 renderer.enabled = false;
-            } else if (value == Type.Hard) {
-                renderer.material = this.hardMaterial;
-                this.stamina = 5;
+            // } else if (value == Type.Hard) {
+            //     renderer.material = this.hardMaterial;
+            //     this.stamina = 5;
             } else {
                 renderer.enabled = true;
                 renderer.material = this.colorMaterials[(int)value];

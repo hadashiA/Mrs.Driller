@@ -75,22 +75,22 @@ public class Player : MonoBehaviour {
         }
 
         this.walkButtonOn = false;
-        if (Input.GetKey(KeyCode.H)) {
+        if (Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.H)) {
             this.direction = Direction.Left;
             this.walkButtonOn = true;
             if (this.walk == null)
                 this.walk = GetWalkEnumerator(Direction.Left);
             
-        } else if (Input.GetKey(KeyCode.L)) {
+        } else if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.L)) {
             this.direction = Direction.Right;
             this.walkButtonOn = true;
             if (this.walk == null) 
                 this.walk = GetWalkEnumerator(Direction.Right);
             
-        } else if (Input.GetKey(KeyCode.K)) {
+        } else if (Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.K)) {
             this.direction = Direction.Up;
             
-        } else if (Input.GetKey(KeyCode.J)) {
+        } else if (Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.J)) {
             this.direction = Direction.Down;
         }
     }
