@@ -71,18 +71,16 @@ public class BlockController : MonoBehaviour {
 
     public void RemoveAtPos(Vector2 pos) {
         if (Collision(pos) == Block.Type.Empty) return;
-
-        Debug.Log("collision:" + Collision(pos) + " block:" + BlockAtPos(pos));
-
+        
         Block block = BlockAtPos(pos);
         Block.Group group = block.group;
-
+        
         foreach (Block member in group) {
             UnFixed(member);
             member.type = Block.Type.Empty;
             Destroy(member.gameObject);
         }
-
+        
         foreach (Block.Group upperGroup in group.LookUpUpperGroups()) {
             SetUnbalanceGroups(upperGroup);
         }
@@ -154,6 +152,14 @@ public class BlockController : MonoBehaviour {
         //     }
         // }
 
+        foreach (Block block in this.fixedBlocks) {
+            if (block == null) continue;
+
+            if (block.blinking && !block.BlinkNext()) {
+                RemoveAtPos(block.pos);
+            }
+        }
+
         HashSet<Block.Group> fixedGroups = new HashSet<Block.Group>();
 
         foreach (Block block in this.unbalanceBlocks) {
@@ -169,6 +175,7 @@ public class BlockController : MonoBehaviour {
                     Collision(block.pos, Direction.Left) == block.type ||
                     Collision(block.pos, Direction.Right) == block.type) {
 
+                    block.DropEnd();
                     fixedGroups.Add(block.group);
                 }
             }
@@ -183,6 +190,12 @@ public class BlockController : MonoBehaviour {
 
             Block.Group reGroup = new Block.Group(this);
             reGroup.Grouping(firstMember);
+
+            if (reGroup.Count >= 4) {
+                foreach (Block member in reGroup) {
+                    member.BlinkStart(this.blinkTime);
+                }
+            }
         }
 
         this.unbalanceBlocks.RemoveAll(delegate(Block block) {

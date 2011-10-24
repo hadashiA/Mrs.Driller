@@ -44,10 +44,6 @@ public class Block : MonoBehaviour {
             }
         }
 
-        public void BlinkStart() {
-            this.blink = GetBlinkEnumerator();
-        }
-
         public HashSet<Group> LookUpUpperGroups() {
             HashSet<Group> result = new HashSet<Group>();
 
@@ -119,26 +115,6 @@ public class Block : MonoBehaviour {
                 LookUpUnbalanceGroupsRecursive(result, history, upperBlock);
             }
         }
-
-        IEnumerator GetBlinkEnumerator() {
-            float beforeBlink = Time.time;
-
-            while (Time.time - beforeBlink < blockController.blinkTime) {
-                float alpha = Mathf.Sin(Time.time * 100.0f);
-                foreach (Block member in this.blocks) {
-                    Color color = member.renderer.material.color;
-                    color.a = alpha;
-                    member.renderer.material.color = color;
-                }
-                yield return true;
-            }
-
-            foreach (Block member in this.blocks) {
-                Color color = member.renderer.material.color;
-                color.a = 0;
-                member.renderer.material.color = color;
-            }
-        }
     }
 
     public Material[] blockMaterials;
@@ -171,12 +147,17 @@ public class Block : MonoBehaviour {
         get { return this.drop != null; }
     }
 
+    public bool blinking {
+        get { return this.blink != null; }
+    }
+
     public bool unbalance {
         get { return this.shaking || this.dropping; }
     }
 
     IEnumerator shake;
     IEnumerator drop;
+    IEnumerator blink;
 
     public override string ToString() {
         return "type:" + this.type + " pos:" + pos;
@@ -211,6 +192,23 @@ public class Block : MonoBehaviour {
         }
     }
     
+    public void BlinkStart(float blinkTime) {
+        this.blink = GetBlinkEnumerator(blinkTime);
+    }
+
+    public bool BlinkNext() {
+        bool result = false;
+
+        if (this.blink != null) {
+            result = this.blink.MoveNext();
+            if (!result) {
+                this.blink = null;
+            }
+        }
+
+        return result;
+    }
+
     IEnumerator GetShakeEnumerator(float shakeTime) {
         float beforeShake = Time.time;
         float beforeX = pos.x;
@@ -228,5 +226,20 @@ public class Block : MonoBehaviour {
             this.pos.y += gravityPerFrame;
             yield return true;
         }
+    }
+
+    IEnumerator GetBlinkEnumerator(float blinkTime) {
+        float beforeBlink = Time.time;
+        Color color = renderer.material.color;
+
+        while (Time.time - beforeBlink < blinkTime) {
+            float alpha = Mathf.Sin(Time.time * 100.0f);
+            color.a = alpha;
+            renderer.material.color = color;
+
+            yield return true;
+        }
+        color.a = 255;
+        renderer.material.color = color;
     }
 } 
