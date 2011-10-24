@@ -182,12 +182,16 @@ public class Block : MonoBehaviour {
     }
 
     public bool ShakeNext() {
-        if (this.shake != null && !this.shake.MoveNext()) {
-            this.shake = null;
-            return true;
-        } else {
-            return false;
+        bool result = false;
+
+        if (this.shake != null) {
+            result = this.shake.MoveNext();
+            if (!result) {
+                this.shake = null;
+            }                 
         }
+
+        return result;
     }
 
     public bool DropNext() {

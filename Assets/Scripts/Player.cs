@@ -46,7 +46,7 @@ public class Player : MonoBehaviour {
     void Start() {
         GameObject game = GameObject.Find("Game");
         this.blockController = game.GetComponent<BlockController>();
-
+        
         this.direction = Direction.Down;
         DropStart();
     }
@@ -58,7 +58,7 @@ public class Player : MonoBehaviour {
             this.drop = null;
         
         // Dig
-        if (Input.GetButton("Fire1") && Time.time > nextDigTime) {
+        if (Input.GetKey(KeyCode.Space) && Time.time > nextDigTime) {
             nextDigTime = Time.time + this.digTimeRate;
             this.walkButtonOn = false;
             Dig();
@@ -73,22 +73,22 @@ public class Player : MonoBehaviour {
         }
 
         this.walkButtonOn = false;
-        if (Input.GetKey(KeyCode.LeftArrow)) {
+        if (Input.GetKey(KeyCode.H)) {
             this.direction = Direction.Left;
             this.walkButtonOn = true;
             if (this.walk == null)
                 this.walk = GetWalkEnumerator(Direction.Left);
             
-        } else if (Input.GetKey(KeyCode.RightArrow)) {
+        } else if (Input.GetKey(KeyCode.L)) {
             this.direction = Direction.Right;
             this.walkButtonOn = true;
             if (this.walk == null) 
                 this.walk = GetWalkEnumerator(Direction.Right);
             
-        } else if (Input.GetKey(KeyCode.UpArrow)) {
+        } else if (Input.GetKey(KeyCode.K)) {
             this.direction = Direction.Up;
             
-        } else if (Input.GetKey(KeyCode.DownArrow)) {
+        } else if (Input.GetKey(KeyCode.J)) {
             this.direction = Direction.Down;
         }
     }
