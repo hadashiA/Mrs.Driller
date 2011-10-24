@@ -59,14 +59,14 @@ public class BlockController : MonoBehaviour {
             int row = Row(pos.y);
             int col = Col(pos.x);
             Block block = this.fixedBlocks[row, col];
-
+            
             return block;
         }
     }
 
     public Block NextBlock(Vector2 pos, Direction direction) {
         pos += Offset[direction];
-        return BlockAtPos(pos);
+        retuprn BlockAtPos(pos);
     }
 
     public void RemoveAtPos(Vector2 pos) {
@@ -80,6 +80,8 @@ public class BlockController : MonoBehaviour {
             member.type = Block.Type.Empty;
             Destroy(member.gameObject);
         }
+
+        this.player.DropStart();
         
         foreach (Block.Group upperGroup in group.LookUpUpperGroups()) {
             SetUnbalanceGroups(upperGroup);
@@ -154,7 +156,7 @@ public class BlockController : MonoBehaviour {
 
         foreach (Block block in this.fixedBlocks) {
             if (block == null) continue;
-
+            
             if (block.blinking && !block.BlinkNext()) {
                 RemoveAtPos(block.pos);
             }

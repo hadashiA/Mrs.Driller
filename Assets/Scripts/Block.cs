@@ -233,7 +233,7 @@ public class Block : MonoBehaviour {
         Color color = renderer.material.color;
 
         while (Time.time - beforeBlink < blinkTime) {
-            float alpha = Mathf.Sin(Time.time * 100.0f);
+            float alpha = Mathf.Sin(Time.time * 1000.0f);
             color.a = alpha;
             renderer.material.color = color;
 
