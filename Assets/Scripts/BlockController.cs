@@ -66,7 +66,7 @@ public class BlockController : MonoBehaviour {
 
     public Block NextBlock(Vector2 pos, Direction direction) {
         pos += Offset[direction];
-        retuprn BlockAtPos(pos);
+        return BlockAtPos(pos);
     }
 
     public void RemoveAtPos(Vector2 pos) {

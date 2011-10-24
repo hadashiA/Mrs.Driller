@@ -10,6 +10,10 @@ public class Block : MonoBehaviour {
     }
 
     public class Group {
+        static int nextId = 0;
+
+        public int id;
+
         public int Count {
             get { return this.blocks.Count; }
         }
@@ -27,6 +31,8 @@ public class Block : MonoBehaviour {
         IEnumerator blink;
 
         public Group(BlockController blockController) {
+            this.id = ++nextId;
+
             this.blockController = blockController;
             this.blocks = new HashSet<Block>();
         }
@@ -82,7 +88,9 @@ public class Block : MonoBehaviour {
         void LookUpUnbalanceGroupsRecursive(HashSet<Group> result,
                                             HashSet<Group> history,
                                             Group group) {
-            history.Add(group);
+            Debug.Log(group.id.ToString());
+            
+            if (!history.Add(group)) return;
 
             // 自分が乗っかっているグループ調べる
             foreach (Block member in group.blocks) {
