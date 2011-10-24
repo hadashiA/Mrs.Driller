@@ -74,11 +74,13 @@ public class Player : MonoBehaviour {
 
         this.walkButtonOn = false;
         if (Input.GetKey(KeyCode.LeftArrow)) {
+            this.direction = Direction.Left;
             this.walkButtonOn = true;
             if (this.walk == null)
                 this.walk = GetWalkEnumerator(Direction.Left);
             
         } else if (Input.GetKey(KeyCode.RightArrow)) {
+            this.direction = Direction.Right;
             this.walkButtonOn = true;
             if (this.walk == null) 
                 this.walk = GetWalkEnumerator(Direction.Right);
@@ -93,6 +95,7 @@ public class Player : MonoBehaviour {
 
     void Dig() {
         Block.Type hit = blockController.Collision(this.pos, this.direction);
+        Debug.Log("dig:" + this.direction + " hit:" + hit);
         if (hit != Block.Type.Empty) {
             blockController.RemoveAtPos(
                 this.pos + BlockController.Offset[this.direction]

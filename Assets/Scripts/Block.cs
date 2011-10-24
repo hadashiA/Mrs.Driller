@@ -88,8 +88,6 @@ public class Block : MonoBehaviour {
         void LookUpUnbalanceGroupsRecursive(HashSet<Group> result,
                                             HashSet<Group> history,
                                             Group group) {
-            Debug.Log(group.id.ToString());
-            
             if (!history.Add(group)) return;
 
             // 自分が乗っかっているグループ調べる
