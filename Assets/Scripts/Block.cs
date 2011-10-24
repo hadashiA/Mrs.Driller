@@ -5,7 +5,8 @@ using System.Collections.Generic;
 public class Block : MonoBehaviour {
     public enum Type {
         Blue = 0, Green, Pink, Yellow,
-        // Air, Hard,
+        // Hard,
+        // Air,
         Empty
     }
 
@@ -123,10 +124,13 @@ public class Block : MonoBehaviour {
         }
     }
 
-    public Material[] blockMaterials;
+    public Material[] colorMaterials;
+    public Material hardMaterial;
 
     public Vector2 pos;
     public Group group;
+
+    public int stamina = 1;
 
     Type _type;
     public Type type {
@@ -138,9 +142,12 @@ public class Block : MonoBehaviour {
             this._type = value;
             if (value == Type.Empty) {
                 renderer.enabled = false;
+            } else if (value == Type.Hard) {
+                renderer.material = this.hardMaterial;
+                this.stamina = 5;
             } else {
                 renderer.enabled = true;
-                renderer.material = this.blockMaterials[(int)value];
+                renderer.material = this.colorMaterials[(int)value];
             }
         }
     }

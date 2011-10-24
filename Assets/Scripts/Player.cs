@@ -10,6 +10,8 @@ public class Player : MonoBehaviour {
     
     public Vector2 pos = new Vector2(7, 0);
 
+    float air = 100;
+
     // Direction direction;
     Direction _direction;
     Direction direction {
